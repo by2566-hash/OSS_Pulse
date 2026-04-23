@@ -9,8 +9,8 @@ This report documents the ingestion, profiling, and cleaning workflow for the Hu
 - **Data source**: Hugging Face Hub — model metadata
 - **Owner / access**: Public API via the `huggingface_hub` Python library
 - **Original format**: JSON Lines (one record per model), fetched from `HfApi.list_models()`
-- **Collection scope**: All public models on the Hugging Face Hub (snapshot taken on TODO_DATE)
-- **Estimated size**: TODO_COUNT models, approximately TODO_SIZE on disk as JSONL
+- **Collection scope**: All public models on the Hugging Face Hub (snapshot taken on 2026-04-23)
+- **Estimated size**: 2,814,955 models, approximately 1.6 GB on disk as JSONL
 
 ### Core Fields
 
@@ -63,26 +63,35 @@ python -m ingestion.ingest_hf_models spark --input data/source/huggingface_hub/h
 ## 4. Data Profiling
 
 - Script used: `profiling/profile_hf_models.py`
-- Total number of records: `TODO`
-- Total number of columns: `TODO`
-- Distinct authors: `TODO`
-- Distinct pipeline tags: `TODO`
-- Distinct library names: `TODO`
+- Total number of records: `2,814,955`
+- Total number of columns: `17`
+- Distinct authors: `534,795`
+- Distinct pipeline tags: `56`
+- Distinct library names: `1,239`
 
 ### 4.1 Downloads Statistics
 
 | Metric | Value |
 |--------|-------|
-| Min downloads | TODO |
-| Max downloads | TODO |
-| Average downloads | TODO |
-| Median downloads | TODO |
+| Min downloads | 0 |
+| Max downloads | 210,971,565 |
+| Average downloads | 875.29 |
+| Median downloads | 0 |
 
 ### 4.2 Pipeline Tag Distribution
 
 | pipeline_tag | count |
 |-------------|-------|
-| TODO | TODO |
+| (null) | 1,923,116 |
+| text-generation | 353,810 |
+| text-classification | 114,285 |
+| text-to-image | 94,731 |
+| reinforcement-learning | 71,569 |
+| automatic-speech-recognition | 30,212 |
+| token-classification | 27,007 |
+| image-classification | 26,668 |
+| image-text-to-text | 25,902 |
+| robotics | 17,766 |
 
 (Top 10 pipeline tags from `output/profiling/hf_models_pipeline_tag_distribution.csv`)
 
@@ -90,24 +99,33 @@ python -m ingestion.ingest_hf_models spark --input data/source/huggingface_hub/h
 
 | library_name | count |
 |-------------|-------|
-| TODO | TODO |
+| (null) | 1,496,175 |
+| transformers | 834,754 |
+| peft | 243,348 |
+| diffusers | 103,376 |
+| stable-baselines3 | 25,995 |
+| sentence-transformers | 17,515 |
+| lerobot | 15,633 |
+| ml-agents | 12,567 |
+| mlx | 8,755 |
+| keras | 4,671 |
 
 (Top 10 library names from `output/profiling/hf_models_library_distribution.csv`)
 
 ### 4.4 Missing Values and Data Quality
 
-| Column | Null Count |
-|--------|-----------|
-| modelId | TODO |
-| author | TODO |
-| pipeline_tag | TODO |
-| library_name | TODO |
-| downloads | TODO |
-| likes | TODO |
-| lastModified | TODO |
-| created_at | TODO |
-| card_data.license | TODO |
-| card_data.datasets | TODO |
+| Column | Null Count | Null % |
+|--------|-----------|--------|
+| modelId | 0 | 0.0% |
+| author | 0 | 0.0% |
+| pipeline_tag | 1,923,116 | 68.3% |
+| library_name | 1,496,175 | 53.1% |
+| downloads | 0 | 0.0% |
+| likes | 0 | 0.0% |
+| lastModified | 0 | 0.0% |
+| created_at | 0 | 0.0% |
+| card_data.license | 1,889,949 | 67.1% |
+| card_data.datasets | 2,646,349 | 94.0% |
 
 ### 4.5 Observed Data Issues
 
@@ -165,19 +183,27 @@ python -m ingestion.ingest_hf_models spark --input data/source/huggingface_hub/h
 
 ### Raw Data Sample
 
-(From `output/samples/raw_hf_models_sample.csv`)
+(From `output/samples/raw_hf_models_sample.csv` — top models by downloads)
 
 | modelId | author | pipeline_tag | library_name | downloads | likes | lastModified |
 |---------|--------|-------------|-------------|-----------|-------|-------------|
-| TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| sentence-transformers/all-MiniLM-L6-v2 | sentence-transformers | sentence-similarity | sentence-transformers | 210,971,565 | 4,719 | 2025-03-06 |
+| Qwen/Qwen3-VL-2B-Instruct | Qwen | image-text-to-text | transformers | 98,836,433 | 372 | 2025-10-23 |
+| google-bert/bert-base-uncased | google-bert | fill-mask | transformers | 60,494,282 | 2,632 | 2024-02-19 |
+| google/electra-base-discriminator | google | | transformers | 47,967,344 | 95 | 2024-02-29 |
+| sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | sentence-transformers | sentence-similarity | sentence-transformers | 36,496,231 | 1,208 | 2026-01-28 |
 
 ### Cleaned Data Sample
 
-(From `output/samples/clean_hf_models_sample.csv`)
+(From `output/samples/clean_hf_models_sample.csv` — top models by downloads after cleaning)
 
 | model_id | owner | model_name | pipeline_tag | library_name | license | downloads | likes | parameter_count |
 |----------|-------|-----------|-------------|-------------|---------|-----------|-------|----------------|
-| TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| sentence-transformers/all-MiniLM-L6-v2 | sentence-transformers | all-MiniLM-L6-v2 | sentence-similarity | sentence-transformers | apache-2.0 | 210,971,565 | 4,719 | |
+| Qwen/Qwen3-VL-2B-Instruct | Qwen | Qwen3-VL-2B-Instruct | image-text-to-text | transformers | apache-2.0 | 98,836,433 | 372 | |
+| google-bert/bert-base-uncased | google-bert | bert-base-uncased | fill-mask | transformers | apache-2.0 | 60,494,282 | 2,632 | |
+| google/electra-base-discriminator | google | electra-base-discriminator | unknown | transformers | apache-2.0 | 47,967,344 | 95 | |
+| sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | sentence-transformers | paraphrase-multilingual-MiniLM-L12-v2 | sentence-similarity | sentence-transformers | apache-2.0 | 36,496,231 | 1,208 | |
 
 ## 7. Output for the Next Project Stage
 

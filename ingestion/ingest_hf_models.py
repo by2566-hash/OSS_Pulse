@@ -82,7 +82,6 @@ def run_fetch(args: argparse.Namespace) -> None:
             cardData=True,
             fetch_config=False,
             sort="downloads",
-            direction=-1,
         ):
             record = {
                 "modelId": model.id,

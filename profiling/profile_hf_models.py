@@ -154,19 +154,28 @@ def main() -> None:
 
     # --- null counts ---
     null_exprs = []
-    for col_name in ["modelId", "author", "pipeline_tag", "library_name", "downloads",
-                     "likes", "lastModified", "created_at"]:
+    seen_aliases = set()
+    # top-level columns
+    for col_name in ["modelId", "model_id", "author", "pipeline_tag", "library_name",
+                     "downloads", "likes", "lastModified", "last_modified_ts", "created_at", "created_ts"]:
         if col_name in df.columns:
             null_exprs.append(
                 F.sum(F.col(col_name).isNull().cast("int")).alias(f"{col_name}_nulls")
             )
-    # nested fields
-    null_exprs.append(
-        F.sum(F.col("card_data.license").isNull().cast("int")).alias("license_nulls")
-    )
-    null_exprs.append(
-        F.sum(F.col("card_data.datasets").isNull().cast("int")).alias("datasets_nulls")
-    )
+            seen_aliases.add(f"{col_name}_nulls")
+    # license and datasets: try nested first, then flattened
+    for candidates, alias in [
+        (["card_data.license", "license"], "license_nulls"),
+        (["card_data.datasets", "training_datasets"], "datasets_nulls"),
+    ]:
+        if alias not in seen_aliases:
+            for col_name in candidates:
+                if col_name in df.columns:
+                    null_exprs.append(
+                        F.sum(F.col(col_name).isNull().cast("int")).alias(alias)
+                    )
+                    seen_aliases.add(alias)
+                    break
 
     null_counts = df.agg(*null_exprs).collect()[0].asDict()
     write_single_csv(list(null_counts.items()), args.null_output)
@@ -182,27 +191,20 @@ def main() -> None:
     write_df_as_local_csv(top_authors_df, args.top_authors_output)
 
     # --- top 20 models by downloads ---
+    model_id_col = "modelId" if "modelId" in df.columns else "model_id"
+    top_downloads_cols = [c for c in [model_id_col, "author", "pipeline_tag", "library_name", "downloads", "likes"] if c in df.columns]
     top_downloads_df = (
         df.filter(F.col("downloads").isNotNull())
-        .select("modelId", "author", "pipeline_tag", "library_name", "downloads", "likes")
+        .select(*top_downloads_cols)
         .orderBy(F.desc("downloads"))
         .limit(20)
     )
     write_df_as_local_csv(top_downloads_df, args.top_downloads_output)
 
     # --- sample rows ---
-    sample_df = (
-        df.select(
-            "modelId",
-            "author",
-            "pipeline_tag",
-            "library_name",
-            "downloads",
-            "likes",
-            "lastModified",
-        )
-        .limit(args.sample_rows)
-    )
+    ts_col = "lastModified" if "lastModified" in df.columns else "last_modified_ts"
+    sample_cols = [c for c in [model_id_col, "author", "pipeline_tag", "library_name", "downloads", "likes", ts_col] if c in df.columns]
+    sample_df = df.select(*sample_cols).limit(args.sample_rows)
     write_df_as_local_csv(sample_df, args.sample_output)
 
     spark.stop()

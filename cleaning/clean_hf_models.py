@@ -146,20 +146,18 @@ def main() -> None:
     )
 
     # 4. Normalize license via mapping
-    license_map_df = build_license_mapping(spark)
+    license_map_df = build_license_mapping(spark).withColumnRenamed("raw_license", "lookup_license")
     cleaned_df = (
         cleaned_df.join(
             license_map_df,
-            cleaned_df.raw_license == license_map_df.raw_license,
+            cleaned_df.raw_license == license_map_df.lookup_license,
             "left",
         )
         .withColumn(
             "license",
             F.coalesce(F.col("normalized_license"), F.col("raw_license"), F.lit("unknown")),
         )
-        .drop("raw_license", "normalized_license")
-        # drop the join key from license_map_df
-        .drop(license_map_df.raw_license)
+        .drop("raw_license", "normalized_license", "lookup_license")
     )
 
     # 5. Write cleaned Parquet
