@@ -73,16 +73,27 @@ def run_fetch(args: argparse.Namespace) -> None:
 
     api = HfApi()
     output_path = ensure_parent_dir(args.output)
+    eval_output_path = ensure_parent_dir(
+        Path(output_path).parent / "hf_eval_results.jsonl"
+    )
 
     print("Fetching model metadata from Hugging Face Hub (this may take a while) ...")
     count = 0
-    with output_path.open("w", encoding="utf-8") as f:
+    eval_count = 0
+    with (
+        output_path.open("w", encoding="utf-8") as f,
+        eval_output_path.open("w", encoding="utf-8") as ef,
+    ):
         for model in api.list_models(
-            full=True,
-            cardData=True,
-            fetch_config=False,
             sort="downloads",
+            expand=[
+                "author", "cardData", "config", "createdAt", "disabled",
+                "downloads", "downloadsAllTime", "gated",
+                "lastModified", "library_name", "likes", "pipeline_tag",
+                "private", "safetensors", "sha", "tags", "trendingScore",
+            ],
         ):
+            # --- main model record ---
             record = {
                 "modelId": model.id,
                 "author": model.author,
@@ -100,6 +111,7 @@ def run_fetch(args: argparse.Namespace) -> None:
                 "trending_score": getattr(model, "trending_score", None),
                 "card_data": None,
                 "safetensors": None,
+                "config": None,
                 "created_at": getattr(model, "created_at", None),
             }
 
@@ -114,9 +126,18 @@ def run_fetch(args: argparse.Namespace) -> None:
                 }
 
             if model.safetensors:
-                params = model.safetensors.get("total", None) if isinstance(model.safetensors, dict) else None
-                if params is not None:
-                    record["safetensors"] = {"parameters": {"total": params}}
+                total = getattr(model.safetensors, "total", None)
+                if total is None and isinstance(model.safetensors, dict):
+                    total = model.safetensors.get("total", None)
+                if total is not None:
+                    record["safetensors"] = {"parameters": {"total": total}}
+
+            if model.config:
+                cfg = model.config if isinstance(model.config, dict) else {}
+                record["config"] = {
+                    "model_type": cfg.get("model_type", None),
+                    "architectures": cfg.get("architectures", None),
+                }
 
             # serialize datetimes to ISO strings
             for key in ("lastModified", "created_at"):
@@ -125,11 +146,32 @@ def run_fetch(args: argparse.Namespace) -> None:
                     record[key] = val.isoformat()
 
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+            # --- eval results (separate file) ---
+            if model.card_data:
+                eval_results = getattr(model.card_data, "eval_results", None)
+                if eval_results:
+                    for er in eval_results:
+                        eval_record = {
+                            "model_id": model.id,
+                            "task_type": getattr(er, "task_type", None),
+                            "dataset_type": getattr(er, "dataset_type", None),
+                            "dataset_name": getattr(er, "dataset_name", None),
+                            "dataset_config": getattr(er, "dataset_config", None),
+                            "dataset_split": getattr(er, "dataset_split", None),
+                            "metric_type": getattr(er, "metric_type", None),
+                            "metric_value": getattr(er, "metric_value", None),
+                            "verified": getattr(er, "verified", None),
+                        }
+                        ef.write(json.dumps(eval_record, ensure_ascii=False) + "\n")
+                        eval_count += 1
+
             count += 1
             if count % 50_000 == 0:
-                print(f"  ... fetched {count:,} models")
+                print(f"  ... fetched {count:,} models ({eval_count:,} eval results)")
 
     print(f"Done. Wrote {count:,} models to {output_path}")
+    print(f"Done. Wrote {eval_count:,} eval results to {eval_output_path}")
 
 
 # ── spark mode ──────────────────────────────────────────────

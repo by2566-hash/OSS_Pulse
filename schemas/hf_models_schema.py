@@ -31,6 +31,13 @@ safetensors_schema = StructType(
     ]
 )
 
+config_schema = StructType(
+    [
+        StructField("model_type", StringType(), True),
+        StructField("architectures", ArrayType(StringType()), True),
+    ]
+)
+
 hf_models_schema = StructType(
     [
         StructField("modelId", StringType(), True),
@@ -49,7 +56,22 @@ hf_models_schema = StructType(
         StructField("trending_score", LongType(), True),
         StructField("card_data", card_data_schema, True),
         StructField("safetensors", safetensors_schema, True),
+        StructField("config", config_schema, True),
         StructField("created_at", StringType(), True),
+    ]
+)
+
+hf_eval_results_schema = StructType(
+    [
+        StructField("model_id", StringType(), True),
+        StructField("task_type", StringType(), True),
+        StructField("dataset_type", StringType(), True),
+        StructField("dataset_name", StringType(), True),
+        StructField("dataset_config", StringType(), True),
+        StructField("dataset_split", StringType(), True),
+        StructField("metric_type", StringType(), True),
+        StructField("metric_value", StringType(), True),
+        StructField("verified", BooleanType(), True),
     ]
 )
 

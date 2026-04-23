@@ -133,6 +133,9 @@ def main() -> None:
         F.col("card_data.base_model").alias("base_model"),
         # safetensors parameters
         F.col("safetensors.parameters.total").alias("parameter_count"),
+        # config
+        F.lower(F.col("config.model_type")).alias("model_type"),
+        F.col("config.architectures").alias("architectures"),
         # gated status
         F.col("gated"),
     )
