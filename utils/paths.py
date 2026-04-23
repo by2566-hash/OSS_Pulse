@@ -16,6 +16,9 @@ REPORT_DIR = PROJECT_ROOT / "report"
 GHARCHIVE_RAW_DIR = RAW_DIR / "gharchive"
 GHARCHIVE_CLEANED_DIR = CLEANED_DIR / "gharchive"
 
+HF_MODELS_RAW_DIR = RAW_DIR / "huggingface_hub"
+HF_MODELS_CLEANED_DIR = CLEANED_DIR / "huggingface_hub"
+
 
 def ensure_parent_dir(path: str | Path) -> Path:
     target = Path(path)
