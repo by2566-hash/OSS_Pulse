@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local Spark / project outputs
+data/
+output/
+
+# Local HPC config
+hpc/env/oss_pulse_2025.env
+
+# Local archives and ad-hoc bundles
+*.tar.gz
+
+# Editor / REPL history
+.Rhistory
