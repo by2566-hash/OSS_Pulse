@@ -1,0 +1,387 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  xleftmargin=1em,
+  framexleftmargin=0.5em,
+}
+
+\title{Hugging Face Hub Model Metadata\\Data Profiling, Cleaning, and Ingestion Report}
+\author{Jhe Chen Li (jl17797)\\Group 9 -- OSS Pulse}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+% ──────────────────────────────────────────
+\section{Introduction}
+
+This report documents the ingestion, profiling, and cleaning workflow for the Hugging Face Hub model metadata used in the OSS Pulse project. The objective is to convert raw model metadata from the Hugging Face Hub API into a structured, analysis-ready dataset that can support downstream Spark analytics on AI open-source project adoption and health.
+
+% ──────────────────────────────────────────
+\section{Data Source Description}
+
+\begin{itemize}
+  \item \textbf{Data source:} Hugging Face Hub --- model metadata
+  \item \textbf{Owner / access:} Public API via the \texttt{huggingface\_hub} Python library
+  \item \textbf{Original format:} JSON Lines (one record per model), fetched from \texttt{HfApi.list\_models()}
+  \item \textbf{Collection scope:} All public models on the Hugging Face Hub (snapshot taken on 2026-04-23)
+  \item \textbf{Size:} 2,814,955 models, approximately 1.6\,GB on disk as JSONL
+\end{itemize}
+
+\subsection{Core Fields}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{modelId}       & string  & Unique identifier (\texttt{owner/model\_name}) \\
+\texttt{author}        & string  & Model uploader or organization \\
+\texttt{pipeline\_tag} & string  & Task type (e.g.\ \texttt{text-generation}) \\
+\texttt{library\_name} & string  & Framework (e.g.\ \texttt{transformers}) \\
+\texttt{tags}          & array   & User-defined and auto-detected tags \\
+\texttt{downloads}     & long    & Download count in the last 30 days \\
+\texttt{likes}         & long    & Number of likes on the Hub \\
+\texttt{lastModified}  & string  & Last update timestamp (ISO 8601) \\
+\texttt{created\_at}   & string  & Model creation timestamp (ISO 8601) \\
+\texttt{private}       & boolean & Whether the model is private \\
+\texttt{card\_data.license}  & string & License from the model card \\
+\texttt{card\_data.datasets} & array  & Training datasets from the model card \\
+\texttt{card\_data.language} & array  & Supported languages \\
+\texttt{safetensors.parameters.total} & long & Total parameter count \\
+\bottomrule
+\end{tabular}
+\caption{Core fields in the raw Hugging Face Hub model metadata.}
+\end{table}
+
+% ──────────────────────────────────────────
+\section{Ingestion Workflow}
+
+The ingestion is split into two stages.
+
+\subsection{Stage 1: API Fetch (Pure Python)}
+
+\begin{itemize}
+  \item Script: \texttt{ingestion/ingest\_hf\_models.py} (mode: \texttt{fetch})
+  \item Uses \texttt{huggingface\_hub.HfApi().list\_models(full=True, cardData=True)} to iterate over all public models
+  \item Serializes each model as one JSON line into a \texttt{.jsonl} file
+  \item This stage does \textbf{not} use Spark --- it is a pure Python data collection step
+\end{itemize}
+
+\subsection{Stage 2: Spark Ingestion (JSON $\rightarrow$ Parquet)}
+
+\begin{itemize}
+  \item Script: \texttt{ingestion/ingest\_hf\_models.py} (mode: \texttt{spark})
+  \item Spark API: DataFrame API
+  \item Input format: JSON Lines
+  \item Explicit schema: \texttt{schemas/hf\_models\_schema.py}
+  \item Output format: raw Parquet at \texttt{data/raw/huggingface\_hub}
+\end{itemize}
+
+\begin{lstlisting}[language=bash,caption={Ingestion commands}]
+# Stage 1: fetch from API
+python -m ingestion.ingest_hf_models fetch \
+  --output data/source/huggingface_hub/hf_models.jsonl
+
+# Stage 2: convert to Parquet
+python -m ingestion.ingest_hf_models spark \
+  --input data/source/huggingface_hub/hf_models.jsonl
+\end{lstlisting}
+
+% ──────────────────────────────────────────
+\section{Data Profiling}
+
+\begin{itemize}
+  \item Script: \texttt{profiling/profile\_hf\_models.py}
+  \item Total records: 2,814,955
+  \item Total columns: 17
+  \item Distinct authors: 534,795
+  \item Distinct pipeline tags: 56
+  \item Distinct library names: 1,239
+\end{itemize}
+
+\subsection{Downloads Statistics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Min downloads     & 0 \\
+Max downloads     & 210,971,565 \\
+Average downloads & 875.29 \\
+Median downloads  & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Downloads distribution summary.}
+\end{table}
+
+\subsection{Pipeline Tag Distribution}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{pipeline\_tag} & \textbf{count} \\
+\midrule
+(null)                          & 1,923,116 \\
+text-generation                 & 353,810 \\
+text-classification             & 114,285 \\
+text-to-image                   & 94,731 \\
+reinforcement-learning          & 71,569 \\
+automatic-speech-recognition    & 30,212 \\
+token-classification            & 27,007 \\
+image-classification            & 26,668 \\
+image-text-to-text              & 25,902 \\
+robotics                        & 17,766 \\
+\bottomrule
+\end{tabular}
+\caption{Top 10 pipeline tags by model count.}
+\end{table}
+
+\subsection{Library Name Distribution}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{library\_name} & \textbf{count} \\
+\midrule
+(null)                & 1,496,175 \\
+transformers          & 834,754 \\
+peft                  & 243,348 \\
+diffusers             & 103,376 \\
+stable-baselines3     & 25,995 \\
+sentence-transformers & 17,515 \\
+lerobot               & 15,633 \\
+ml-agents             & 12,567 \\
+mlx                   & 8,755 \\
+keras                 & 4,671 \\
+\bottomrule
+\end{tabular}
+\caption{Top 10 library names by model count.}
+\end{table}
+
+\subsection{Missing Values and Data Quality}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Column} & \textbf{Null Count} & \textbf{Null \%} \\
+\midrule
+modelId            & 0         & 0.0\% \\
+author             & 0         & 0.0\% \\
+pipeline\_tag      & 1,923,116 & 68.3\% \\
+library\_name      & 1,496,175 & 53.1\% \\
+downloads          & 0         & 0.0\% \\
+likes              & 0         & 0.0\% \\
+lastModified       & 0         & 0.0\% \\
+created\_at        & 0         & 0.0\% \\
+card\_data.license & 1,889,949 & 67.1\% \\
+card\_data.datasets & 2,646,349 & 94.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Null counts for key columns in the raw dataset.}
+\end{table}
+
+\subsection{Observed Data Issues}
+
+\begin{itemize}
+  \item 68.3\% of models lack a \texttt{pipeline\_tag} --- they are uploaded without specifying a task type.
+  \item \texttt{library\_name} is null for 53.1\% of models not associated with a recognized framework.
+  \item \texttt{card\_data.license} is inconsistently formatted (e.g.\ \texttt{apache-2.0} vs \texttt{Apache 2.0}).
+  \item \texttt{card\_data.datasets} is null for 94.0\% of models --- most uploaders do not specify training data.
+  \item Many models have \texttt{downloads = 0} and \texttt{likes = 0}, indicating placeholder or unused uploads (median downloads is 0).
+  \item \texttt{safetensors.parameters.total} is only available for models stored in safetensors format.
+\end{itemize}
+
+% ──────────────────────────────────────────
+\section{Data Cleaning}
+
+Script: \texttt{cleaning/clean\_hf\_models.py}
+
+\subsection{Cleaning Steps}
+
+\begin{enumerate}
+  \item \textbf{Filter private and disabled models} --- remove records where \texttt{private = true} or \texttt{disabled = true}.
+  \item \textbf{Split \texttt{modelId}} into \texttt{owner} and \texttt{model\_name} columns.
+  \item \textbf{Normalize \texttt{pipeline\_tag}} --- lowercase; null values replaced with \texttt{"unknown"}.
+  \item \textbf{Normalize \texttt{library\_name}} --- lowercase; null values replaced with \texttt{"unknown"}.
+  \item \textbf{Parse timestamps} --- convert \texttt{lastModified} $\rightarrow$ \texttt{last\_modified\_ts} + \texttt{last\_modified\_date}; convert \texttt{created\_at} $\rightarrow$ \texttt{created\_ts}.
+  \item \textbf{Extract \texttt{card\_data} fields} --- \texttt{license}, \texttt{training\_datasets}, \texttt{languages}, \texttt{base\_model}.
+  \item \textbf{Normalize license} --- map common synonyms (e.g.\ \texttt{"apache 2.0"} $\rightarrow$ \texttt{"apache-2.0"}); null $\rightarrow$ \texttt{"unknown"}.
+  \item \textbf{Compute derived fields} --- \texttt{tag\_count} from tags array; \texttt{parameter\_count} from safetensors.
+  \item \textbf{Filter bad data} --- drop records where \texttt{modelId} is null, does not contain \texttt{/}, or \texttt{lastModified} is null.
+  \item \textbf{Deduplicate} --- \texttt{dropDuplicates(["model\_id"])}.
+\end{enumerate}
+
+Total cleaned records: 2,814,954 (1 record removed).
+
+\subsection{Cleaned Output Schema}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Column} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{model\_id}          & string    & Original modelId \\
+\texttt{owner}              & string    & Organization or user \\
+\texttt{model\_name}        & string    & Model name after the \texttt{/} \\
+\texttt{author}             & string    & Lowercased author \\
+\texttt{pipeline\_tag}      & string    & Normalized task type \\
+\texttt{library\_name}      & string    & Normalized framework \\
+\texttt{license}            & string    & Normalized license \\
+\texttt{downloads}          & long      & 30-day download count \\
+\texttt{likes}              & long      & Like count \\
+\texttt{downloads\_all\_time} & long    & All-time downloads \\
+\texttt{tag\_count}         & int       & Number of tags \\
+\texttt{parameter\_count}   & long      & Model parameter count \\
+\texttt{training\_datasets} & array     & Training datasets from card \\
+\texttt{languages}          & array     & Supported languages \\
+\texttt{base\_model}        & string    & Base model if fine-tuned \\
+\texttt{gated}              & string    & Access restriction status \\
+\texttt{last\_modified\_ts} & timestamp & Last modified timestamp \\
+\texttt{created\_ts}        & timestamp & Creation timestamp \\
+\bottomrule
+\end{tabular}
+\caption{Cleaned dataset schema.}
+\end{table}
+
+% ──────────────────────────────────────────
+\section{Dataset Snippet}
+
+\subsection{Raw Data Sample}
+
+Top 5 models by downloads from the raw dataset:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llrr}
+\toprule
+\textbf{modelId} & \textbf{pipeline\_tag} & \textbf{downloads} & \textbf{likes} \\
+\midrule
+sentence-transformers/all-MiniLM-L6-v2 & sentence-similarity & 210,971,565 & 4,719 \\
+Qwen/Qwen3-VL-2B-Instruct             & image-text-to-text  & 98,836,433  & 372 \\
+google-bert/bert-base-uncased          & fill-mask           & 60,494,282  & 2,632 \\
+google/electra-base-discriminator      &                     & 47,967,344  & 95 \\
+s-t/paraphrase-multilingual-MiniLM     & sentence-similarity & 36,496,231  & 1,208 \\
+\bottomrule
+\end{tabular}
+\caption{Raw data sample (top 5 by downloads).}
+\end{table}
+
+\subsection{Cleaned Data Sample}
+
+Top 5 models by downloads after cleaning:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllrr}
+\toprule
+\textbf{model\_id} & \textbf{pipeline\_tag} & \textbf{license} & \textbf{downloads} & \textbf{likes} \\
+\midrule
+sentence-transformers/all-MiniLM-L6-v2 & sentence-similarity & apache-2.0 & 210,971,565 & 4,719 \\
+Qwen/Qwen3-VL-2B-Instruct             & image-text-to-text  & apache-2.0 & 98,836,433  & 372 \\
+google-bert/bert-base-uncased          & fill-mask           & apache-2.0 & 60,494,282  & 2,632 \\
+google/electra-base-discriminator      & unknown             & apache-2.0 & 47,967,344  & 95 \\
+s-t/paraphrase-multilingual-MiniLM     & sentence-similarity & apache-2.0 & 36,496,231  & 1,208 \\
+\bottomrule
+\end{tabular}
+\caption{Cleaned data sample (top 5 by downloads).}
+\end{table}
+
+% ──────────────────────────────────────────
+\section{Output for the Next Project Stage}
+
+The cleaned Hugging Face models dataset will support the following downstream analyses:
+
+\begin{itemize}
+  \item \textbf{Adoption signals:} download and like distributions across pipeline tags and libraries to identify which AI tasks and frameworks have the strongest real-world usage.
+  \item \textbf{Cross-source join with GH Archive:} linking \texttt{owner/model\_name} to GitHub repository names to correlate GitHub activity (stars, forks, PRs, issues) with Hugging Face adoption metrics.
+  \item \textbf{Under-recognized project detection:} models with high downloads but low GitHub stars, or vice versa.
+  \item \textbf{Health scoring enrichment:} the \texttt{parameter\_count}, \texttt{license}, \texttt{tag\_count}, and \texttt{downloads} fields will feed into the repository health dashboard.
+  \item \textbf{Ecosystem analysis:} comparing model counts, downloads, and community activity across task categories and framework ecosystems.
+\end{itemize}
+
+% ──────────────────────────────────────────
+\section{Appendix}
+
+\subsection{Commands Used for This Submission}
+
+\begin{lstlisting}[language=bash]
+cd /path/to/OSS_Pulse
+
+# Fetch metadata from Hugging Face Hub API
+python -m ingestion.ingest_hf_models fetch \
+  --output data/source/huggingface_hub/hf_models.jsonl
+
+# Spark: convert JSONL to raw Parquet
+python -m ingestion.ingest_hf_models spark \
+  --input data/source/huggingface_hub/hf_models.jsonl
+
+# Profile raw data
+python -m profiling.profile_hf_models \
+  --input data/raw/huggingface_hub --input-format parquet
+
+# Clean data
+python -m cleaning.clean_hf_models \
+  --input data/raw/huggingface_hub --input-format parquet
+
+# Profile cleaned data
+python -m profiling.profile_hf_models \
+  --input data/cleaned/huggingface_hub --input-format parquet \
+  --summary-output output/profiling/hf_clean_profile_summary.csv \
+  --pipeline-tag-output output/profiling/hf_clean_pipeline_tag_distribution.csv \
+  --library-output output/profiling/hf_clean_library_distribution.csv \
+  --null-output output/profiling/hf_clean_null_counts.csv \
+  --top-authors-output output/profiling/hf_clean_top_authors.csv \
+  --top-downloads-output output/profiling/hf_clean_top_downloads.csv \
+  --sample-output output/samples/clean_hf_models_profile_sample.csv
+\end{lstlisting}
+
+\subsection{Running on NYU Dataproc}
+
+\begin{lstlisting}[language=bash]
+# SSH into Dataproc master node
+gcloud compute ssh nyu-dataproc-m \
+  --project=hpc-dataproc-19b8 --zone=us-central1-f
+
+# Upload JSONL to HDFS
+hdfs dfs -mkdir -p /user/jl17797_nyu_edu/oss_pulse/source/huggingface_hub
+hdfs dfs -put data/source/huggingface_hub/hf_models.jsonl \
+  /user/jl17797_nyu_edu/oss_pulse/source/huggingface_hub/
+
+# Run Spark jobs
+spark-submit --deploy-mode client \
+  ingestion/ingest_hf_models.py spark \
+  --input hdfs:///user/jl17797_nyu_edu/oss_pulse/source/huggingface_hub/hf_models.jsonl
+
+spark-submit --deploy-mode client \
+  profiling/profile_hf_models.py \
+  --input hdfs:///user/jl17797_nyu_edu/oss_pulse/raw/huggingface_hub
+
+spark-submit --deploy-mode client \
+  cleaning/clean_hf_models.py \
+  --input hdfs:///user/jl17797_nyu_edu/oss_pulse/raw/huggingface_hub
+\end{lstlisting}
+
+\end{document}
