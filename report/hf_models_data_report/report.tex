@@ -1,0 +1,236 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{caption}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+}
+
+\title{Data Ingestion Report:\\Hugging Face Hub Model Metadata}
+\author{Jhe Chen Li (jl17797)\\Group 9 -- OSS Pulse}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\section{Data Source}
+
+\begin{itemize}
+  \item \textbf{Source:} Hugging Face Hub model metadata (public API)
+  \item \textbf{Format:} JSON Lines, fetched via \texttt{huggingface\_hub} Python library
+  \item \textbf{Size:} 2,815,064 models, 1.7\,GB JSONL (229\,MB gzipped)
+  \item \textbf{Supplementary:} 2,019,739 evaluation results (580\,MB JSONL)
+  \item \textbf{Spark code:} Scala 2.12, packaged as JAR via sbt, executed on NYU Dataproc
+\end{itemize}
+
+\subsection{Core Fields}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{modelId}       & string  & Unique ID (\texttt{owner/model\_name}) \\
+\texttt{author}        & string  & Uploader or organization \\
+\texttt{pipeline\_tag} & string  & Task type (e.g.\ \texttt{text-generation}) \\
+\texttt{library\_name} & string  & Framework (e.g.\ \texttt{transformers}) \\
+\texttt{downloads}     & long    & 30-day download count \\
+\texttt{likes}         & long    & Like count \\
+\texttt{lastModified}  & string  & Last update (ISO 8601) \\
+\texttt{created\_at}   & string  & Creation time (ISO 8601) \\
+\texttt{tags}          & array   & Tags \\
+\texttt{card\_data.license}  & string & License from model card \\
+\texttt{card\_data.datasets} & array  & Training datasets \\
+\texttt{safetensors.parameters.total} & long & Parameter count \\
+\texttt{config.model\_type} & string & Architecture (e.g.\ \texttt{llama}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Ingestion}
+
+Two stages:
+
+\begin{enumerate}
+  \item \textbf{API Fetch} (Python): \texttt{ingest\_hf\_models.py fetch} downloads all public models via \texttt{HfApi.list\_models()} with \texttt{expand} for \texttt{safetensors}, \texttt{config}, and \texttt{cardData}. Outputs \texttt{hf\_models.jsonl} and \texttt{hf\_eval\_results.jsonl}.
+  \item \textbf{Spark Ingestion} (Scala): \texttt{IngestHfModels} reads JSONL with explicit schema, writes raw Parquet.
+\end{enumerate}
+
+\begin{lstlisting}[language=bash,caption={Commands run on NYU Dataproc}]
+# Upload to HDFS
+hdfs dfs -cp gs://nyu-dataproc-hdfs-ingest/oss-pulse/hf_models.jsonl.gz \
+  /user/jl17797_nyu_edu/oss_pulse/source/huggingface_hub/
+
+# Ingestion
+spark-submit --class osspulse.ingestion.IngestHfModels \
+  oss-pulse_2.12-0.1.0.jar \
+  --input /user/jl17797_nyu_edu/oss_pulse/source/huggingface_hub/hf_models.jsonl.gz \
+  --raw-output /user/jl17797_nyu_edu/oss_pulse/raw/huggingface_hub
+\end{lstlisting}
+
+\section{Data Profiling}
+
+Scala class: \texttt{osspulse.profiling.ProfileHfModels}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total records      & 2,815,064 \\
+Total columns      & 18 \\
+Distinct authors   & 534,877 \\
+Distinct pipeline tags & 56 \\
+Distinct libraries & 1,242 \\
+Max downloads      & 210,971,565 \\
+Avg downloads      & 875.25 \\
+Median downloads   & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Summary statistics.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+\centering\small
+\begin{tabular}{lr}
+\toprule
+\textbf{pipeline\_tag} & \textbf{count} \\
+\midrule
+(null)                       & 1,923,354 \\
+text-generation              & 353,584 \\
+text-classification          & 114,299 \\
+text-to-image                & 94,737 \\
+reinforcement-learning       & 71,569 \\
+asr                          & 30,245 \\
+token-classification         & 27,009 \\
+image-classification         & 26,669 \\
+image-text-to-text           & 25,916 \\
+robotics                     & 17,777 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Top 10 pipeline tags.}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\centering\small
+\begin{tabular}{lr}
+\toprule
+\textbf{library\_name} & \textbf{count} \\
+\midrule
+(null)                & 1,496,382 \\
+transformers          & 834,577 \\
+peft                  & 243,357 \\
+diffusers             & 103,384 \\
+stable-baselines3     & 25,995 \\
+sentence-transformers & 17,515 \\
+lerobot               & 15,644 \\
+ml-agents             & 12,567 \\
+mlx                   & 8,754 \\
+keras                 & 4,672 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{Top 10 library names.}
+\end{minipage}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Column} & \textbf{Null Count} & \textbf{Null \%} \\
+\midrule
+modelId            & 0         & 0.0\% \\
+author             & 0         & 0.0\% \\
+pipeline\_tag      & 1,923,354 & 68.3\% \\
+library\_name      & 1,496,382 & 53.1\% \\
+downloads          & 0         & 0.0\% \\
+likes              & 0         & 0.0\% \\
+lastModified       & 0         & 0.0\% \\
+created\_at        & 0         & 0.0\% \\
+card\_data.license & 1,889,922 & 67.1\% \\
+card\_data.datasets & 2,646,443 & 94.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Null counts.}
+\end{table}
+
+\textbf{Key issues:} 68\% of models lack a \texttt{pipeline\_tag}; 53\% lack \texttt{library\_name}; 94\% lack training dataset metadata; license formatting is inconsistent.
+
+\section{Data Cleaning}
+
+Scala class: \texttt{osspulse.cleaning.CleanHfModels}. Steps:
+
+\begin{enumerate}
+  \item Filter out private and disabled models.
+  \item Split \texttt{modelId} into \texttt{owner} and \texttt{model\_name}.
+  \item Normalize \texttt{pipeline\_tag} and \texttt{library\_name} (lowercase, null $\to$ \texttt{"unknown"}).
+  \item Parse timestamps (\texttt{lastModified} $\to$ \texttt{last\_modified\_ts}).
+  \item Extract and normalize \texttt{license} from \texttt{card\_data} with synonym mapping.
+  \item Extract \texttt{parameter\_count} from \texttt{safetensors} and \texttt{model\_type} from \texttt{config}.
+  \item Filter records with null \texttt{modelId} or invalid format.
+  \item Deduplicate by \texttt{model\_id}.
+\end{enumerate}
+
+Total cleaned records: \textbf{2,815,064}.
+
+\begin{lstlisting}[language=bash,caption={Profiling and cleaning on NYU Dataproc}]
+spark-submit --class osspulse.profiling.ProfileHfModels \
+  oss-pulse_2.12-0.1.0.jar \
+  --input /user/jl17797_nyu_edu/oss_pulse/raw/huggingface_hub
+
+spark-submit --class osspulse.cleaning.CleanHfModels \
+  oss-pulse_2.12-0.1.0.jar \
+  --input /user/jl17797_nyu_edu/oss_pulse/raw/huggingface_hub \
+  --output /user/jl17797_nyu_edu/oss_pulse/cleaned/huggingface_hub
+\end{lstlisting}
+
+\section{Dataset Snippet}
+
+\subsection{Raw Data Sample (top 5 by downloads)}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{llrr}
+\toprule
+\textbf{modelId} & \textbf{pipeline\_tag} & \textbf{downloads} & \textbf{likes} \\
+\midrule
+s-t/all-MiniLM-L6-v2           & sentence-similarity & 210,971,565 & 4,719 \\
+Qwen/Qwen3-VL-2B-Instruct      & image-text-to-text  & 98,836,433  & 372 \\
+google-bert/bert-base-uncased   & fill-mask           & 60,494,282  & 2,632 \\
+google/electra-base-disc.       &                     & 47,967,344  & 95 \\
+s-t/paraphrase-multi-MiniLM    & sentence-similarity & 36,496,231  & 1,208 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cleaned Data Sample (top 5 by downloads)}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lllrrr}
+\toprule
+\textbf{model\_id} & \textbf{pipeline\_tag} & \textbf{license} & \textbf{downloads} & \textbf{likes} & \textbf{params} \\
+\midrule
+s-t/all-MiniLM-L6-v2        & sentence-similarity & apache-2.0 & 210,971,565 & 4,719 & 23M \\
+Qwen/Qwen3-VL-2B-Instruct   & image-text-to-text  & apache-2.0 & 98,836,433  & 372   & 2.1B \\
+google-bert/bert-base-unc.   & fill-mask           & apache-2.0 & 60,494,282  & 2,632 & 110M \\
+google/electra-base-disc.    & unknown             & apache-2.0 & 47,967,344  & 95    & --- \\
+s-t/paraphrase-multi-MiniLM & sentence-similarity & apache-2.0 & 36,496,231  & 1,208 & 118M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

@@ -1,0 +1,11 @@
+model_id,owner,model_name,author,pipeline_tag,library_name,license,downloads,likes,parameter_count,last_modified_ts
+sentence-transformers/all-MiniLM-L6-v2,sentence-transformers,all-MiniLM-L6-v2,sentence-transformers,sentence-similarity,sentence-transformers,apache-2.0,210971565,4719,22713728,2025-03-06 13:37:44.0
+Qwen/Qwen3-VL-2B-Instruct,Qwen,Qwen3-VL-2B-Instruct,qwen,image-text-to-text,transformers,apache-2.0,98836433,372,2127532032,2025-10-23 11:30:44.0
+google-bert/bert-base-uncased,google-bert,bert-base-uncased,google-bert,fill-mask,transformers,apache-2.0,60494282,2632,110106428,2024-02-19 11:06:12.0
+google/electra-base-discriminator,google,electra-base-discriminator,google,unknown,transformers,apache-2.0,47967344,95,,2024-02-29 10:20:20.0
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2,sentence-transformers,paraphrase-multilingual-MiniLM-L12-v2,sentence-transformers,sentence-similarity,sentence-transformers,apache-2.0,36496231,1208,117654272,2026-01-28 10:02:26.0
+sentence-transformers/all-mpnet-base-v2,sentence-transformers,all-mpnet-base-v2,sentence-transformers,sentence-similarity,sentence-transformers,apache-2.0,34385340,1281,109486978,2025-08-19 10:14:25.0
+Falconsai/nsfw_image_detection,Falconsai,nsfw_image_detection,falconsai,image-classification,transformers,apache-2.0,32943712,1057,,2025-04-06 13:42:07.0
+cross-encoder/ms-marco-MiniLM-L6-v2,cross-encoder,ms-marco-MiniLM-L6-v2,cross-encoder,text-ranking,sentence-transformers,apache-2.0,26976547,222,22714113,2025-08-29 14:36:10.0
+BAAI/bge-small-en-v1.5,BAAI,bge-small-en-v1.5,baai,feature-extraction,sentence-transformers,mit,24175616,446,33360512,2024-02-22 03:36:23.0
+openai/clip-vit-large-patch14,openai,clip-vit-large-patch14,openai,zero-shot-image-classification,transformers,unknown,21007735,1996,427616846,2023-09-15 15:49:35.0
