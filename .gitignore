@@ -12,5 +12,10 @@ hpc/env/oss_pulse_2025.env
 # Local archives and ad-hoc bundles
 *.tar.gz
 
+# sbt / Scala build outputs
+target/
+project/target/
+project/project/
+
 # Editor / REPL history
 .Rhistory
