@@ -150,6 +150,15 @@ repo_stats = gh.groupBy("repo_name").agg(
 
 **Lesson:** At billion-record scale, the cost of GROUP BY is dominated by network I/O (shuffle), not computation. Partition strategy at ingest time determines downstream query cost.
 
+**What we would do differently:** Write cleaned GH Archive data bucketed by `repo_name` into a Hive table at ingest time. This would co-locate all events for the same repo on the same partition, eliminating the 83 GiB shuffle in Job 04 entirely and reducing aggregation time from 3+ hours to minutes.
+```python
+# Optimized write (requires Hive metastore)
+cleaned.write \
+  .bucketBy(256, "repo_name") \
+  .sortBy("repo_name") \
+  .saveAsTable("gharchive_cleaned")
+```
+
 ---
 
 ## Slide 12 — Results

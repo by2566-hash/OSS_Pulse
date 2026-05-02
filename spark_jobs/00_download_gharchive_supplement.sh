@@ -18,6 +18,12 @@ GH_BASE="https://data.gharchive.org"
 
 hdfs dfs -mkdir -p "$HDFS_DEST"
 
+# Fetch existing file list once (1 HDFS request instead of 1 per file)
+EXISTING_LIST="/tmp/gharchive_supp_existing.txt"
+echo "[INFO] Fetching existing file list from HDFS..."
+hdfs dfs -ls "$HDFS_DEST" 2>/dev/null | awk '{print $NF}' | sed 's|.*/||' | sort > "$EXISTING_LIST"
+echo "[INFO] $(wc -l < "$EXISTING_LIST") files already in HDFS"
+
 # Generate all dates from 2025-12-01 to 2026-04-30
 START="2025-12-01"
 END="2026-04-30"
@@ -28,8 +34,8 @@ while [[ ! "$cur" > "$END" ]]; do
         fname="${cur}-${hour}.json.gz"
         hdfs_path="${HDFS_DEST}/${fname}"
 
-        # Skip if already downloaded
-        if hdfs dfs -test -e "$hdfs_path" 2>/dev/null; then
+        # Skip if already downloaded (local lookup, no HDFS round-trip)
+        if grep -qF "$fname" "$EXISTING_LIST" 2>/dev/null; then
             echo "[SKIP] $fname already in HDFS"
             continue
         fi
