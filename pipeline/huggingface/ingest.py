@@ -201,7 +201,7 @@ def write_sample_csv(df, output_path: str | Path, sample_rows: int) -> None:
 
 
 def run_spark(args: argparse.Namespace) -> None:
-    from schemas.hf_models_schema import hf_models_schema
+    from pipeline.huggingface.schema import hf_models_schema
     from utils.spark_session import create_spark_session
 
     spark = create_spark_session("HFModelsIngestion")

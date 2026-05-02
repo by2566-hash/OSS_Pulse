@@ -72,25 +72,25 @@ done
 
 echo
 echo "=== Step 2: Ingest raw JSON.gz into Parquet ==="
-"${PYTHON_BIN}" -m ingestion.ingest_gharchive \
+"${PYTHON_BIN}" -m pipeline.gharchive.ingest \
   --input "${SOURCE_DIR}/${TARGET_DATE}-*.json.gz" \
   --write-partitions "${WRITE_PARTITIONS}"
 
 echo
 echo "=== Step 3: Profile raw Parquet dataset ==="
-"${PYTHON_BIN}" -m profiling.profile_gharchive \
+"${PYTHON_BIN}" -m pipeline.gharchive.profile \
   --input "${RAW_DIR}" \
   --input-format parquet
 
 echo
 echo "=== Step 4: Clean raw Parquet dataset ==="
-"${PYTHON_BIN}" -m cleaning.clean_gharchive \
+"${PYTHON_BIN}" -m pipeline.gharchive.clean \
   --input "${RAW_DIR}" \
   --input-format parquet
 
 echo
 echo "=== Step 5: Profile cleaned Parquet dataset ==="
-"${PYTHON_BIN}" -m profiling.profile_gharchive \
+"${PYTHON_BIN}" -m pipeline.gharchive.profile \
   --input "${CLEAN_DIR}" \
   --input-format parquet \
   --summary-output "${PROFILE_DIR}/gharchive_clean_profile_summary.csv" \

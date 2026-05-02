@@ -9,7 +9,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.column import Column
 from pyspark.sql.types import TimestampNTZType, TimestampType
 
-from schemas.gharchive_schema import gharchive_schema
+from pipeline.gharchive.schema import gharchive_schema
 from utils.paths import PROFILING_DIR, SAMPLES_DIR, ensure_parent_dir
 from utils.spark_session import create_spark_session
 

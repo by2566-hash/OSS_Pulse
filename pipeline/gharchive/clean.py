@@ -8,7 +8,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.types import TimestampNTZType, TimestampType
 
-from schemas.gharchive_schema import CORE_EVENT_TYPES, gharchive_schema
+from pipeline.gharchive.schema import CORE_EVENT_TYPES, gharchive_schema
 from utils.paths import GHARCHIVE_CLEANED_DIR, SAMPLES_DIR, ensure_parent_dir
 from utils.spark_session import create_spark_session
 

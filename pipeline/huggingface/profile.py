@@ -8,7 +8,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.types import TimestampNTZType, TimestampType
 
-from schemas.hf_models_schema import hf_models_schema
+from pipeline.huggingface.schema import hf_models_schema
 from utils.paths import PROFILING_DIR, SAMPLES_DIR, ensure_parent_dir
 from utils.spark_session import create_spark_session
 
