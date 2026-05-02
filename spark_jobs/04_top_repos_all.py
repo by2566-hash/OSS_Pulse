@@ -43,7 +43,7 @@ top_repos = gh.groupBy("repo_name").agg(
     F.countDistinct("actor_login").alias("distinct_actors"),
     F.countDistinct("event_date").alias("active_days"),
     F.count("event_id").alias("total_events")
-).orderBy(F.desc("stars")).limit(1000)
+).orderBy(F.desc("stars")).limit(1000).cache()
 
 top_repos.write.mode("overwrite").parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/top_repos_all")
