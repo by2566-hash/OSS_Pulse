@@ -38,8 +38,8 @@ OSS_Pulse/
 │   ├── 06_star_growth_hype.py                # hype detection
 │   └── 07_contributor_health.py              # contributor diversity
 │
-├── scala/                      # Scala Spark pipeline (HF Hub ingestion)
-│   └── src/main/scala/osspulse/
+├── src/main/scala/osspulse/    # Scala Spark pipeline (HF Hub ingestion)
+├── build.sbt
 │
 ├── utils/                      # Shared Python utilities
 │   ├── paths.py
