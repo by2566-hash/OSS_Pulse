@@ -159,6 +159,11 @@ cleaned.write \
   .saveAsTable("gharchive_cleaned")
 ```
 
+**Additional optimizations applied:**
+- Added `.cache()` on computed DataFrames before multiple write actions — without caching, each `.write()` and `.count()` re-triggers the full shuffle independently (3× redundant recomputation in Job 04)
+- Replaced Python UDFs (`is_ai()`) with native `F.col().isin()` in Jobs 05/06/07 — Python UDFs force JVM↔Python serialization per row; native expressions run entirely in JVM
+- Cached `gh` DataFrame in Job 07 where it is consumed 3 times by independent aggregations
+
 ---
 
 ## Slide 12 — Results
