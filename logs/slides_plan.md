@@ -129,23 +129,26 @@ curl -sfL "$URL" | hdfs dfs -put -f - "$DEST/$fname"
 
 ---
 
-## Slide 11 — Code Challenge: by2566 — Three-Way Health Score
+## Slide 11 — Code Challenge: by2566 — Billion-Record Shuffle at Ecosystem Scale
 
-**Challenge:** Three data sources at incompatible granularities (event-level / model-level / monthly) and vastly different numeric scales.
+**Challenge:** GH Archive data is partitioned by `event_date` (334 partitions), but ecosystem-wide analysis requires aggregation by `repo_name`. Computing top-1000 repos across 1B+ events forces a full cross-partition shuffle — all events for the same repo must be co-located on the same executor before aggregation can occur.
 
-**Solution:** Log-normalize each dimension independently, then apply weighted sum. Missing PyPI values default to 0 (not dropped).
+**Scale:** 72 GB input → 83 GB shuffle → 1B+ records regrouped across 2 workers, taking 3+ hours
 
-**Key code** (`spark_jobs/03_health_score.py`):
+**Solution:** Tuned `spark.sql.shuffle.partitions` to match cluster resources. Structured downstream jobs (05/06/07) to read from pre-aggregated Job 04 output instead of re-shuffling raw events.
+
+**Key code** (`spark_jobs/04_top_repos_all.py`):
 ```python
-# Log-normalize: brings skewed distributions to comparable scale
-for col in METRIC_COLS:
-    df = df.withColumn(f"{col}_norm",
-        (F.log1p(F.col(col)) - mn) / (mx - mn))
+spark.conf.set("spark.sql.shuffle.partitions", "400")
 
-health_score = 0.35 * gh_norm + 0.35 * pypi_norm + 0.30 * hf_norm
+# GROUP BY repo_name forces full shuffle across date partitions
+repo_stats = gh.groupBy("repo_name").agg(
+    F.countDistinct("actor_login").alias("distinct_actors"),
+    F.sum(...).alias("total_stars"), ...
+).orderBy(F.desc("total_stars")).limit(1000)
 ```
 
-**Outcome:** Single composite score for 36 AI repos; surfaces repos that look healthy on one axis but weak on others.
+**Lesson:** At billion-record scale, the cost of GROUP BY is dominated by network I/O (shuffle), not computation. Partition strategy at ingest time determines downstream query cost.
 
 ---
 
