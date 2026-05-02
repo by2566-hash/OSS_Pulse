@@ -89,8 +89,8 @@ gcloud compute scp nyu-dataproc-m:/tmp/<output>.csv data/<output>.csv \
 | 05 | `05_ai_vs_general.py` | Job04 + seed | `ai_vs_general` | ⬜ 待執行（需 Job04）|
 | 06 | `06_star_growth_hype.py` | GH Archive + supplement + Job04 + seed | `star_growth_hype` | ⬜ 待執行（需 Job04）|
 | 07 | `07_contributor_health.py` | GH Archive + supplement + Job04 + seed | `contributor_health` | ⬜ 待執行（需 Job04）|
-| S  | `download_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | ⬜ 選做（補 2025-12 ~ 2026-04）|
-| 09 | `09_clean_supplement.py` | `source/gharchive_raw/` | `cleaned/gharchive_supplement/` | ⬜ 選做（需 download_supplement.sh）|
+| 00a | `00_download_gharchive_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | 🔄 執行中（補 2025-12 ~ 2026-04）|
+| 00b | `00_clean_gharchive_supplement.py` | `source/gharchive_raw/` | `cleaned/gharchive_supplement/` | ⬜ 待執行（需 00a）|
 
 ---
 
@@ -138,21 +138,21 @@ gcloud config set project hpc-dataproc-19b8
 
 ```bash
 # 1. 上傳 scripts
-gcloud compute scp spark_jobs/download_supplement.sh nyu-dataproc-m:/tmp/ \
+gcloud compute scp spark_jobs/00_download_gharchive_supplement.sh nyu-dataproc-m:/tmp/ \
   --project=hpc-dataproc-19b8 --zone=us-central1-f
-gcloud compute scp spark_jobs/09_clean_supplement.py nyu-dataproc-m:/tmp/ \
+gcloud compute scp spark_jobs/00_clean_gharchive_supplement.py nyu-dataproc-m:/tmp/ \
   --project=hpc-dataproc-19b8 --zone=us-central1-f
 
-# 2. 在 Dataproc 背景下載（約 150 天 × 24 小時 = 3600 個 .json.gz）
-dp "nohup bash /tmp/download_supplement.sh > /tmp/dl_supp.log 2>&1 &"
+# 2. 在 Dataproc 背景下載（約 151 天 × 24 小時 = 3624 個 .json.gz）
+dp "nohup bash /tmp/00_download_gharchive_supplement.sh > /tmp/dl_supp.log 2>&1 &"
 
 # 3. 監控下載進度
 dp "tail -20 /tmp/dl_supp.log"
 dp "hdfs dfs -ls /user/jl17797_nyu_edu/oss_pulse/source/gharchive_raw/ | wc -l"
 
 # 4. 等下載完成後執行清理 Job
-dp "spark-submit /tmp/09_clean_supplement.py > /tmp/09_out.txt 2>&1; echo EXIT:\$?"
-dp "tail -30 /tmp/09_out.txt"
+dp "spark-submit /tmp/00_clean_gharchive_supplement.py > /tmp/00b_out.txt 2>&1; echo EXIT:\$?"
+dp "tail -30 /tmp/00b_out.txt"
 
 # 5. 確認輸出
 dp "hdfs dfs -ls /user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_supplement/"
