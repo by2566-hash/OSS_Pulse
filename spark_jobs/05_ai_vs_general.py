@@ -19,25 +19,19 @@ Run:
 """
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import BooleanType
 import json
 
 spark = SparkSession.builder.appName("05_AI_vs_General").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
 
-# Load seed set
+# Load seed set — use native isin() instead of Python UDF (no JVM↔Python serialization)
 seed_raw = spark.sparkContext.wholeTextFiles(
     "/user/jl17797_nyu_edu/oss_pulse/source/seed_repos.json"
 ).collect()
-seed_set = set(r["repo"].lower() for r in json.loads(seed_raw[0][1]))
-seed_bc = spark.sparkContext.broadcast(seed_set)
-
-@F.udf(BooleanType())
-def is_ai(repo_name):
-    return repo_name is not None and repo_name.lower() in seed_bc.value
+seed_list = [r["repo"].lower() for r in json.loads(seed_raw[0][1])]
 
 top = spark.read.parquet("/user/jl17797_nyu_edu/oss_pulse/analytics/top_repos_all")
-top = top.withColumn("is_ai", is_ai(F.col("repo_name")))
+top = top.withColumn("is_ai", F.col("repo_name").isin(seed_list))
 
 # Per-repo with label
 top.write.mode("overwrite").parquet(

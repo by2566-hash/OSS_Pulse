@@ -23,7 +23,6 @@ Run:
 """
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import BooleanType
 import json
 
 spark = SparkSession.builder.appName("06_StarGrowthHype").getOrCreate()
@@ -32,12 +31,7 @@ spark.sparkContext.setLogLevel("ERROR")
 seed_raw = spark.sparkContext.wholeTextFiles(
     "/user/jl17797_nyu_edu/oss_pulse/source/seed_repos.json"
 ).collect()
-seed_set = set(r["repo"].lower() for r in json.loads(seed_raw[0][1]))
-seed_bc = spark.sparkContext.broadcast(seed_set)
-
-@F.udf(BooleanType())
-def is_ai(repo_name):
-    return repo_name is not None and repo_name.lower() in seed_bc.value
+seed_list = [r["repo"].lower() for r in json.loads(seed_raw[0][1])]
 
 # Top 1000 repos as filter
 top_repos = spark.read.parquet(
@@ -79,8 +73,9 @@ hype = monthly.withColumn("avg_monthly_stars", F.avg("monthly_stars").over(w)) \
     F.first("peak_ratio").alias("peak_ratio"),
     F.count("month").alias("months_active")
   ) \
-  .withColumn("is_ai", is_ai(F.col("repo_name"))) \
-  .orderBy(F.desc("peak_ratio"))
+  .withColumn("is_ai", F.col("repo_name").isin(seed_list)) \
+  .orderBy(F.desc("peak_ratio")) \
+  .cache()
 
 hype.write.mode("overwrite").parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/star_growth_hype")

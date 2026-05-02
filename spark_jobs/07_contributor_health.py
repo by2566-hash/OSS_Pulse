@@ -25,7 +25,6 @@ Run:
 """
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import BooleanType
 import json
 
 spark = SparkSession.builder.appName("07_ContributorHealth").getOrCreate()
@@ -34,12 +33,7 @@ spark.sparkContext.setLogLevel("ERROR")
 seed_raw = spark.sparkContext.wholeTextFiles(
     "/user/jl17797_nyu_edu/oss_pulse/source/seed_repos.json"
 ).collect()
-seed_set = set(r["repo"].lower() for r in json.loads(seed_raw[0][1]))
-seed_bc = spark.sparkContext.broadcast(seed_set)
-
-@F.udf(BooleanType())
-def is_ai(repo_name):
-    return repo_name is not None and repo_name.lower() in seed_bc.value
+seed_list = [r["repo"].lower() for r in json.loads(seed_raw[0][1])]
 
 top_repos = spark.read.parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/top_repos_all"
@@ -55,7 +49,9 @@ try:
 except Exception:
     gh_all = gh_2025
     print("INFO: supplement not found, using 2025 only")
-gh = gh_all.join(top_repos, on="repo_name")
+
+# Cache gh — used 3 times (total_contrib, push, pr_contrib)
+gh = gh_all.join(top_repos, on="repo_name").cache()
 
 # Total contributors
 total_contrib = gh.groupBy("repo_name") \
@@ -92,8 +88,9 @@ pr_contrib = gh.filter(F.col("event_type") == "PullRequestEvent") \
 result = total_contrib \
   .join(push_health, on="repo_name", how="left") \
   .join(pr_contrib, on="repo_name", how="left") \
-  .withColumn("is_ai", is_ai(F.col("repo_name"))) \
-  .orderBy(F.desc("total_contributors"))
+  .withColumn("is_ai", F.col("repo_name").isin(seed_list)) \
+  .orderBy(F.desc("total_contributors")) \
+  .cache()
 
 result.write.mode("overwrite").parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/contributor_health")
