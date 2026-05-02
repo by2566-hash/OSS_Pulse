@@ -1,30 +1,95 @@
-# OSS Pulse GH Archive Pipeline
+# OSS Pulse
 
-This repository contains the Spark ingestion, profiling, cleaning, and HPC rolling-run scripts for the OSS Pulse project.
+Group 9 — NYU BDAD Spring 2026
+**jl17797** (Jhe Chen Li) · **by2566** (Bo Yu)
 
-## Analysis Window
+Analysing open-source software ecosystem health by combining
+GitHub Archive event data, Hugging Face Hub model metadata, and PyPI download statistics.
 
-- Full project target: January 1, 2025 00:00:00 UTC through December 31, 2025 23:59:59 UTC
-- Local smoke-test example used during development: a smaller UTC slice such as `2025-01-16`
+---
 
-The full one-year run is designed for SSH/HPC with the rolling pipeline documented in [hpc/README.md](hpc/README.md).
+## Project Structure
+
+```
+OSS_Pulse/
+├── pipeline/                   # Python data pipeline (by data source)
+│   ├── gharchive/              # GH Archive: schema, ingest, clean, profile, EDA
+│   │   ├── schema.py
+│   │   ├── ingest.py
+│   │   ├── clean.py
+│   │   ├── profile.py
+│   │   ├── eda.ipynb
+│   │   └── smoke_test.sh       # local one-day smoke test
+│   └── huggingface/            # HF Hub: schema, ingest, clean, profile, EDA
+│       ├── schema.py
+│       ├── ingest.py
+│       ├── clean.py
+│       ├── profile.py
+│       └── eda.py
+│
+├── spark_jobs/                 # Standalone Spark jobs for NYU Dataproc
+│   ├── 00_download_gharchive_supplement.sh   # download 2025-12 ~ 2026-04 → HDFS
+│   ├── 00_clean_gharchive_supplement.py      # clean supplement data
+│   ├── 01_repo_daily_metrics.py              # AI repos daily activity
+│   ├── 02_hf_gh_join.py                      # HF + GH join
+│   ├── 03_health_score.py                    # three-way health score
+│   ├── 04_top_repos_all.py                   # top 1000 repos (full ecosystem)
+│   ├── 05_ai_vs_general.py                   # AI vs general comparison
+│   ├── 06_star_growth_hype.py                # hype detection
+│   └── 07_contributor_health.py              # contributor diversity
+│
+├── scala/                      # Scala Spark pipeline (HF Hub ingestion)
+│   └── src/main/scala/osspulse/
+│
+├── utils/                      # Shared Python utilities
+│   ├── paths.py
+│   └── spark_session.py
+│
+├── hpc/                        # Dataproc cluster config
+│   └── env/oss_pulse_2025.env.example
+│
+├── logs/                       # Runbook and EDA progress log
+│   ├── pipeline_runbook.md
+│   └── eda_progress.md
+│
+└── report/                     # Reports and LaTeX source
+```
+
+---
+
+## Data Sources
+
+| Source | Coverage | Location (HDFS) |
+|--------|----------|-----------------|
+| GH Archive | 2025-01-01 ~ 2025-11-30 (334 days) | `/user/by2566_nyu_edu/oss_pulse/cleaned/gharchive/2025/` |
+| GH Archive supplement | 2025-12-01 ~ 2026-04-30 | `/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_supplement/` |
+| Hugging Face Hub | April 2026 snapshot (2,815,064 models) | `/user/jl17797_nyu_edu/oss_pulse/cleaned/huggingface_hub/` |
+| PyPI downloads | 2025 monthly (46 libraries) | `data/source/pypi_monthly_downloads.jsonl` |
+
+---
+
+## Pipeline Entry Points
+
+### Local smoke test (GH Archive, one day)
+```bash
+bash pipeline/gharchive/smoke_test.sh 2025-01-16
+```
+
+### Dataproc Spark jobs
+```bash
+# Upload and run (replace <N> with job number)
+gcloud compute scp spark_jobs/<script>.py nyu-dataproc-m:/tmp/ \
+  --project=hpc-dataproc-19b8 --zone=us-central1-f
+gcloud compute ssh nyu-dataproc-m --project=hpc-dataproc-19b8 --zone=us-central1-f \
+  --command "spark-submit /tmp/<script>.py"
+```
+
+See `logs/pipeline_runbook.md` for the full execution order and status.
+
+---
 
 ## Requirements
 
-- Python 3.13
-- `pyspark==4.1.1`
-- Java 17
-
-If you run the Spark modules directly, make sure `JAVA_HOME` points to a Java 17 installation. On this machine, the project smoke script auto-selects the Java 17 runtime inside the Anaconda environment.
-
-## Main Entry Points
-
-- Ingestion: `python -m ingestion.ingest_gharchive`
-- Profiling: `python -m profiling.profile_gharchive`
-- Cleaning: `python -m cleaning.clean_gharchive`
-- Local smoke run: `bash ingestion/run_local_gharchive_smoke.sh`
-- Full-year HPC rolling run: `bash hpc/scripts/run_gharchive_2025_rolling.sh hpc/env/oss_pulse_2025.env`
-
-## Sharing on GitHub
-
-This repo is set up to share code and documentation only. Downloaded GH Archive data, derived Parquet outputs, local profiling CSVs, and machine-specific env files are ignored by Git so the repository stays lightweight for collaborators.
+- Python 3.13 · `pyspark==4.1.1` · Java 17
+- Scala 2.12 · sbt (for `scala/` module)
+- Google Cloud SDK (`gcloud`) for Dataproc access
