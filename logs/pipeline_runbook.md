@@ -1,6 +1,6 @@
 # OSS Pulse — Pipeline Runbook
 _Group 9 | jl17797 (Jhe Chen Li) + by2566 (Bo Yu)_
-_Last updated: 2026-05-02_
+_Last updated: 2026-05-02 21:10_
 
 ## 環境
 
@@ -89,8 +89,11 @@ gcloud compute scp nyu-dataproc-m:/tmp/<output>.csv data/<output>.csv \
 | 05 | `05_ai_vs_general.py` | Job04 + seed | `ai_vs_general` | ⬜ 待執行（需 Job04）|
 | 06 | `06_star_growth_hype.py` | GH Archive + supplement + Job04 + seed | `star_growth_hype` | ⬜ 待執行（需 Job04）|
 | 07 | `07_contributor_health.py` | GH Archive + supplement + Job04 + seed | `contributor_health` | ⬜ 待執行（需 Job04）|
-| 00a | `00_download_gharchive_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | 🔄 執行中（補 2025-12 ~ 2026-04）|
+| 00a | `00_download_gharchive_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | 🔄 執行中（PID 1548890，約到 2026-01-13，1,037/3,624 檔）|
 | 00b | `00_clean_gharchive_supplement.py` | `source/gharchive_raw/` | `cleaned/gharchive_supplement/` | ⬜ 待執行（需 00a）|
+| 00c | `00_download_gharchive_2022q1.sh` | GH Archive website (HTTP) | `source/gharchive_2022q1/` | 🔄 執行中（PID 1600750，2022-01-01 起）|
+| 00d | `00_clean_gharchive_2022q1.py` | `source/gharchive_2022q1/` | `cleaned/gharchive_2022q1/` | ⬜ 待執行（需 00c）|
+| 08 | `08_era_comparison.py` | `cleaned/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/era_comparison/` | ⬜ 待執行（需 00d）|
 
 ---
 
@@ -127,6 +130,42 @@ gcloud config set project hpc-dataproc-19b8
 ```
 
 ---
+
+---
+
+## GH Archive 2022 Q1（Era Comparison，Optional）
+
+目的：以 2022 Q1（ChatGPT 前）為 baseline，對比 2025 Q1 全生態活動分佈，分析 coding agent 對 OSS 生態的影響。
+
+### HDFS 路徑
+| 用途 | 路徑 |
+|------|------|
+| 下載的 raw JSON.gz | `/user/jl17797_nyu_edu/oss_pulse/source/gharchive_2022q1/` |
+| 清理後 Parquet | `/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2022q1/` |
+| 分析結果 | `/user/jl17797_nyu_edu/oss_pulse/analytics/era_comparison/` |
+
+### 執行步驟
+
+```bash
+# 下載（已啟動，PID 1600750）
+# 監控進度
+tail -5 /tmp/download_2022q1.log
+hdfs dfs -count /user/jl17797_nyu_edu/oss_pulse/source/gharchive_2022q1/
+
+# 下載完成後（2,160 檔）→ 清理
+spark-submit /tmp/00_clean_gharchive_2022q1.py > /tmp/00d_out.txt 2>&1; echo EXIT:$?
+
+# 清理完成後 → 跑對比分析
+spark-submit /tmp/08_era_comparison.py > /tmp/08_out.txt 2>&1; echo EXIT:$?
+```
+
+### Job 08 輸出
+| CSV | 說明 |
+|-----|------|
+| `summary_metrics` | 總事件數、distinct repos/actors、PR merge rate、avg commit size |
+| `push_size_distribution` | commit 粒度分佈（1/2-5/6-20/>20 各佔比）|
+| `pr_push_ratio` | per-repo PR/push 比值分佈（p25/p50/p75）|
+| `active_repos_monthly` | 每月活躍 repo 數（生態廣度）|
 
 ---
 

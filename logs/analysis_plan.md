@@ -94,6 +94,13 @@ _Last updated: 2026-05-02_
 - star 爆發是否對應特定事件（模型發布、論文）？
 - **資料：** GH Archive 月維度聚合
 
+### RQ6（Optional）：Coding Agent 對 OSS 生態的影響
+- 2022 Q1（ChatGPT 前）vs 2025 Q1：全生態 commit 粒度、PR/push 比值、active repo 數是否有結構性位移？
+- `push_distinct_size = 1` 的比例是否在 2025 顯著更高（agent-style 小 commit）？
+- PR merge rate 是否上升（agent PR 品質更一致）？
+- **資料：** `cleaned/gharchive_2022q1/`（下載中）+ by2566 2025 Q1
+- **狀態：** 🔄 下載中（PID 1600750），完成後跑 Job 00d → 08
+
 ---
 
 ## 三、視覺化設計
