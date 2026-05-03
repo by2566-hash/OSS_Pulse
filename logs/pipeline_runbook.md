@@ -98,7 +98,7 @@ gcloud compute scp nyu-dataproc-m:/tmp/<output>.csv data/<output>.csv \
 | 00f | `00_clean_gharchive_2023q1.py` | `source/gharchive_2023q1/` | `cleaned/gharchive_2023q1/` | ⬜ 待執行（需 00e）|
 | 00g | `00_download_gharchive_2024q1.sh` | GH Archive website (HTTP) | `source/gharchive_2024q1/` | 🔄 執行中（PID 2797524，48/2,160 檔，2%）|
 | 00h | `00_clean_gharchive_2024q1.py` | `source/gharchive_2024q1/` | `cleaned/gharchive_2024q1/` | ⬜ 待執行（需 00g）|
-| 08 | `08_era_comparison.py` | `cleaned/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/era_comparison/` | ⬜ 待執行（需 00d，計畫擴展為 4 年 Q1 對比）|
+| 08 | `08_era_comparison.py` | 2022/23/24 Q1 cleaned + by2566 2025 Q1 + supplement 2026 Q1 | `analytics/era_comparison/` | ⬜ 待執行（需 00d/f/h + supplement 清理完成，支援 5 年 Q1 對比）|
 
 ---
 

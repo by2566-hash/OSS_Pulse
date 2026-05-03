@@ -25,6 +25,12 @@ _Deadline: 2026-05-05 | Last updated: 2026-05-02_
 - **Who uses it:** ML engineers, researchers, project maintainers, VCs evaluating OSS frameworks
 - **Beneficiaries:** Anyone deciding which AI framework to adopt or contribute to
 - **Why important:** GitHub stars alone are misleading — hype ≠ health; this project triangulates real adoption signals across three independent dimensions
+- **Era analysis (optional):** 5 年 Q1 時間軸（2022–2026）追蹤 coding agent 對全 OSS 生態的影響
+  - 2022-Q1：Pre-ChatGPT 基準
+  - 2023-Q1：ChatGPT 爆發
+  - 2024-Q1：LLM 百花齊放（GPT-4 / Claude / Gemini）
+  - 2025-Q1：Agent 元年（Cursor / Claude Code / Devin）
+  - 2026-Q1：Coding agent 全面滲透
 
 ---
 
@@ -168,16 +174,30 @@ cleaned.write \
 
 ## Slide 12 — Results
 
-> Fill in actual numbers after Jobs 05 / 06 / 07 complete. Placeholder findings below based on `health_score.csv`.
+_Based on: `health_score.csv` (36 repos), `hf_gh_join.csv`, `top_repos_all.parquet` (1,000 repos)_
 
-**Finding 1 — AI repos dominate composite health**
-Top 5 health_score repos are all AI frameworks: `transformers`, `diffusers`, `torch`, `timm`, `sentence-transformers`.
+---
 
-**Finding 2 — Hype ≠ Health**
-Several repos with high star velocity (peak_ratio > 5×) show low PyPI adoption — community excitement without engineering adoption.
+**Finding 1 — transformers 是三維全能冠軍**
+`huggingface/transformers` health_score 14.68（最高），PyPI 年下載 **9.38 億次**，HF Hub 上 **834,591 個模型**基於它，active_days 332 天（幾乎全年無休）。真正的生態系統基礎設施。
 
-**Finding 3 — Three-dimension divergence**
-~30% of AI repos are HF-popular but PyPI-light, suggesting hobbyist/researcher use without production deployment.
+**Finding 2 — Hype ≠ Health：Ollama & DeepSeek 案例**
+- **Ollama**：GitHub 新增 44,259 stars（集合中最多），但 HF 下載量只有 **241 次**——本地執行工具，stars 高度誇大生態影響力
+- **DeepSeek-R1/V3**：top_repos 全站排名 #2/#3（各超過 86,000 stars、93,000 distinct actors），但完全不在 health_score 集合——純模型發布熱潮，無持久工具生態
+
+**Finding 3 — Quiet Powerhouse：低調的真實影響力**
+`sentence-transformers`：2025 年僅 1,588 個新 stars，卻有 HF 下載 **5.19 億次**。
+每個 star 對應 **327,014 次 HF 下載**，是 transformers 的 3 倍效率。
+GitHub 活躍度嚴重低估了它在生產環境的滲透率。
+
+**Finding 4 — 傳統 ML vs LLM 生態完全割裂**
+`scikit-learn`：PyPI 年下載 **14.28 億次**（全集合第一，超過 transformers），HF 下載幾乎為零（122 次）。
+`LangChain`：PyPI 排名 #3（8.72 億下載），但 HF 模型數 1、下載量 0。
+→ orchestration / 傳統 ML 工具與 LLM 訓練框架是兩個平行宇宙。
+
+**Finding 5 — GitHub stars 是最差的健康指標**
+Health score 前 3 名（transformers / ultralytics / pytorch）在 top_repos 1000 名中的 stars 排名分別為 #109 / #67 / #186。
+Stars 不足以預測生態健康；PyPI + HF 組合才能捕捉真實的工程採用訊號。
 
 ---
 
