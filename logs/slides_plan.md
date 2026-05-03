@@ -118,20 +118,32 @@ PyPI BigQuery ──────┘    Job 04: Top 1000 repos           Tableau 
 
 ---
 
-## Slide 10 — Code Challenge: jl17797 — Supplement Ingestion
+## Slide 10 — Code Challenge: jl17797 — HDFS Quota & Rolling Pipeline
 
-**Challenge:** HF Hub snapshot is April 2026, but GH Archive only covered through Nov 2025 — 5-month data gap.
+**Challenge 1 — Data freshness gap:**
+HF Hub snapshot is April 2026, but GH Archive only covered through Nov 2025 — 5-month gap. Needed to ingest 3,624 hourly files without occupying /tmp disk.
 
-**Solution:** Stream 3,624 hourly `.json.gz` files directly to HDFS via `curl | hdfs dfs -put -f -` (no /tmp disk space needed), then Spark-clean into Parquet.
-
-**Key code** (`spark_jobs/00_download_gharchive_supplement.sh`):
+**Solution:** Stream directly to HDFS via `curl | hdfs dfs -put -f -`. One-time `hdfs dfs -ls` + local `grep` for resume-safe skip (vs. 1 HDFS round-trip per file):
 ```bash
-# Resume-safe: skip files already on HDFS
-if hdfs dfs -test -e "$DEST/$fname"; then continue; fi
-curl -sfL "$URL" | hdfs dfs -put -f - "$DEST/$fname"
+# One HDFS call at start instead of N round-trips
+hdfs dfs -ls "$HDFS_DEST" | awk '{print $NF}' | sed 's|.*/||' > "$EXISTING_LIST"
+if grep -qF "$fname" "$EXISTING_LIST"; then continue; fi
+curl -sfL "$URL" | hdfs dfs -put -f - "$HDFS_DEST/$fname"
 ```
 
-**Outcome:** 151 additional days ingested (2025-12-01 ~ 2026-04-30), enabling time-aligned analysis with HF April 2026 snapshot.
+**Challenge 2 — HDFS quota: 500 GB hard limit, 5 years × Q1 raw = ~700 GB needed:**
+Downloading 2022/2023/2024 Q1 raw simultaneously would blow the quota (each year ~150–235 GB raw, but only ~18 GB after Spark cleaning).
+
+**Solution — Rolling pipeline orchestration:**
+Process one year at a time: download → Spark clean → delete raw → next year. Cleaned Parquet is 8× smaller than raw gz, so space is freed before the next download starts.
+
+```bash
+wait_for_download "$RAW_2022" 2160 "2022-Q1"
+spark-submit 00_clean_gharchive_2022q1.py
+hdfs dfs -rm -r "$RAW_2022"   # free ~151 GB before 2023-Q1 starts
+```
+
+**Outcome:** 5-year Q1 timeline (2022–2026) ingested within 500 GB quota. Era comparison across Pre-ChatGPT → LLM explosion → Coding-agent saturation enabled.
 
 ---
 
