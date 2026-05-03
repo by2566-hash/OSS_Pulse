@@ -21,7 +21,7 @@ spark = SparkSession.builder.appName("04_TopReposAll") \
     .enableHiveSupport() \
     .getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
-spark.conf.set("spark.sql.shuffle.partitions", "400")
+spark.conf.set("spark.sql.shuffle.partitions", "200")
 
 # 優先讀 bucketed table（GROUP BY repo_name 無需 shuffle）
 # 如不存在則 fallback 到原始 parquet（需 83 GB shuffle）

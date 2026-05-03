@@ -12,28 +12,20 @@
 
 set -euo pipefail
 
-MONTHS="2025-12 2026-01 2026-02 2026-03 2026-04"
+MONTHS="2026-02 2026-03 2026-04"
 SCRIPT="/tmp/00_clean_supplement_monthly.py"
 OUT_LOG_DIR="/tmp"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
-first=true
 for month in $MONTHS; do
-    if $first; then
-        mode="overwrite"
-        first=false
-    else
-        mode="append"
-    fi
-
-    log "=== Cleaning $month (mode: $mode) ==="
+    log "=== Cleaning $month (mode: append) ==="
     spark-submit \
         --num-executors 4 \
         --executor-cores 2 \
         --executor-memory 6g \
         --driver-memory 4g \
-        "$SCRIPT" "$month" "$mode" \
+        "$SCRIPT" "$month" "append" \
         > "${OUT_LOG_DIR}/supp_${month}.log" 2>&1 \
         && log "$month OK" \
         || { log "ERROR: $month failed. Check ${OUT_LOG_DIR}/supp_${month}.log"; exit 1; }

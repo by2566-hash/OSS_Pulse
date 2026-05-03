@@ -27,6 +27,7 @@ write_mode = sys.argv[2] if len(sys.argv) > 2 else "append"
 spark = SparkSession.builder.appName(f"CleanSupplement_{month}").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
 spark.conf.set("spark.sql.shuffle.partitions", "200")
+spark.conf.set("spark.sql.files.ignoreCorruptFiles", "true")
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 

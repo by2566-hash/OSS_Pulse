@@ -116,6 +116,12 @@ PyPI BigQuery ──────┘    Job 04: Top 1000 repos           Tableau 
 
 **Tools:** Python (ingest / clean) · PySpark (analytics) · Scala Spark (HF pipeline) · Tableau (visualization)
 
+**Health Score Framework:**
+We extend the [OpenSSF Criticality Score](https://github.com/ossf/criticality_score) concept by adding two adoption dimensions that the original score does not capture:
+- **Original OpenSSF signals:** contributor count, commit frequency, org count, recent releases, issue/PR age
+- **Our extension:** HF model downloads (30%) + PyPI engineering usage (20%) — measures real-world adoption beyond GitHub activity
+- **Formula:** `health_score = Σ log1p(metric_i) × weight_i` across 6 signals (HF downloads 30%, PyPI 20%, GH stars 15%, pushes 15%, PRs 10%, active_days 10%)
+
 ---
 
 ## Slide 10 — Code Challenge: jl17797 — HDFS Quota & Rolling Pipeline
@@ -186,7 +192,7 @@ cleaned.write \
 
 ## Slide 12 — Results
 
-_Based on: `health_score.csv` (36 repos), `hf_gh_join.csv`, `top_repos_all.parquet` (1,000 repos)_
+_Based on: `health_score.csv` (36 repos), `hf_gh_join.csv`, `top_repos_all` (1,000 repos), `star_growth_hype.csv` (1,000 repos), `contributor_health.csv` (1,000 repos)_
 
 ---
 
@@ -226,6 +232,34 @@ _Based on: `star_growth_hype.csv` (1,000 repos, Job 06)_
 
 > *"A high peak ratio tells you a project went viral. A high total stars with a low peak ratio tells you a project is healthy."*
 
+**Finding 7 — Push 集中度 ≠ 單人風險：需結合 PR 貢獻者解讀**
+_Based on: `contributor_health.csv` (1,000 repos, Job 07)_
+
+GitHub PushEvent 包含 PR merge（歸屬按 merge 的人），因此 top1_push_ratio 高不一定代表單人寫 code，可能是集中 merge 權。需結合 `pr_contributors` 區分：
+
+| Repo | top1_push_ratio | pr_contributors | 解讀 |
+|------|----------------|-----------------|------|
+| `hiyouga/llama-factory` | 0.961 | 123 | 集中 merge，但社群活躍 |
+| `geekan/metagpt` | 0.929 | **22** | ⚠️ 真正單人風險 |
+| `openai/whisper` | 0.875 | 45 | 中等風險 |
+| `unslothai/unsloth` | 0.818 | **166** | 集中 merge，社群貢獻多 |
+| `tensorflow/tensorflow` | 0.990 | 299 | CI bot 自動化，非真人 |
+
+對比最健康的 AI 框架：`pytorch/pytorch` 僅 **0.140**（275 push + 1,605 PR contributors），`huggingface/transformers` **0.191**（72 push + 1,244 PR contributors）
+
+**Finding 8 — Stars 多 ≠ 貢獻者多：觀眾 vs 建設者**
+- `deepseek-ai/deepseek-r1`：93,947 distinct actors，但只有 **5 人 push、19 次 push** → 99.99% 是觀眾
+- `codecrafters-io/build-your-own-x`：115,862 actors，僅 **3 人 push** → 教程倉庫，無協作開發
+- 對比 `pytorch/pytorch`：14,563 actors、**275 push contributors、118,740 次 push** → 真正的社群協作
+- `n8n-io/n8n`：113,341 actors、**100 push contributors、32,351 pushes** → stars 高且有真實開發深度
+
+**Finding 9 — 最健康的開源項目：push 分散度指標**
+- 全生態最健康：`grafana/grafana`（top1_push_ratio **0.052**，316 push contributors）
+- AI 領域最健康：`pytorch/pytorch`（0.140）、`chroma-core/chroma`（0.164）、`vllm-project/vllm`（0.192）
+- Push 分散度與 PR 貢獻者正相關：`llvm/llvm-project` 1,145 push + 2,870 PR contributors
+
+> *"Stars count your audience. Push contributors count your builders. A healthy project needs both."*
+
 ---
 
 ## Slide 13 — Obstacles
@@ -246,9 +280,10 @@ _Based on: `star_growth_hype.csv` (1,000 repos, Job 06)_
 
 ## Slide 14 — Summary
 
-- Built an end-to-end Spark pipeline combining 3 heterogeneous data sources at 100M-event scale
+- Built an end-to-end Spark pipeline combining 3 heterogeneous data sources at ~146M-event scale (485+ days)
 - Computed a composite health score for 36 AI repos across community, adoption, and engineering dimensions
-- **Key takeaway:** GitHub stars are a noisy signal; PyPI + HF downloads together better predict sustained ecosystem health
+- Analyzed contributor health and bus-factor risk for top 1,000 repos
+- **Key takeaway:** GitHub stars are a noisy signal; PyPI + HF downloads together better predict sustained ecosystem health. Push contributor concentration (top1_push_ratio) reveals single-maintainer risk invisible to star counts.
 - Framework-agnostic methodology — extensible to any open-source domain
 
 ---
@@ -279,7 +314,11 @@ _Based on: `star_growth_hype.csv` (1,000 repos, Job 06)_
 
 ## TODO before May 5
 
-- [ ] Jobs 05 / 06 / 07 跑完 → 填入 Slide 12 實際數字
+- [x] Jobs 04 / 05 / 06 / 07 跑完 → 填入 Slide 12 實際數字（9 findings）
+- [x] Supplement data cleaned (151 days, Dec 2025 – Apr 2026)
+- [x] Contributor health analysis (Finding 7-9)
+- [ ] Job 08 (era comparison) — 等 2023/2024 Q1 下載+清理完
+- [ ] 2023 Q1 下載中（1162/2160, 54%），2024 Q1 待下載
 - [ ] Tableau 圖表截圖 → 插入 Slide 12（最多 3 張）
 - [ ] Design Diagram 換成視覺圖（可用 draw.io / Keynote）
 - [ ] Data Sample slides 換成真實資料截圖（from Jupyter or Spark output）
