@@ -1,6 +1,6 @@
 # OSS Pulse — Pipeline Runbook
 _Group 9 | jl17797 (Jhe Chen Li) + by2566 (Bo Yu)_
-_Last updated: 2026-05-02 22:35_
+_Last updated: 2026-05-03 04:30_
 
 ## 環境
 
@@ -86,15 +86,19 @@ gcloud compute scp nyu-dataproc-m:/tmp/<output>.csv data/<output>.csv \
 | 02 | `02_hf_gh_join.py` | HF cleaned + Job01 + seed | `hf_gh_join` | ✅ 完成 |
 | 03 | `03_health_score.py` | Job02 + PyPI JSONL | `health_score` | ✅ 完成 |
 | 04 | `04_top_repos_all.py` | GH Archive (by2566) ALL + supplement | `top_repos_all` | ✅ 完成（parquet 完整，application_19536）|
-| 05 | `05_ai_vs_general.py` | Job04 + seed | `ai_vs_general` | 🔄 執行中 |
-| 06 | `06_star_growth_hype.py` | GH Archive + supplement + Job04 + seed | `star_growth_hype` | ⬜ 待執行（需 Job05）|
-| 07 | `07_contributor_health.py` | GH Archive + supplement + Job04 + seed | `contributor_health` | ⬜ 待執行（需 Job05）|
-| 00a | `00_download_gharchive_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | 🔄 執行中（PID 1548890，約到 2026-01-13，1,037/3,624 檔）|
+| 05 | `05_ai_vs_general.py` | Job04 + seed | `ai_vs_general` | ✅ 完成（application_19586）|
+| 06 | `06_star_growth_hype.py` | GH Archive + supplement + Job04 + seed | `star_growth_hype` | ✅ parquet 完成；CSV 🔄 補寫中（06_csv_only.py, PID 2861377）|
+| 07 | `07_contributor_health.py` | GH Archive + supplement + Job04 + seed | `contributor_health` | 🔄 執行中（application_19639，10%）|
+| 00a | `00_download_gharchive_supplement.sh` | GH Archive website (HTTP) | `source/gharchive_raw/` | 🔄 執行中（PID 2716304，3,358/3,624 檔，93%）|
 | 00b | `00_clean_gharchive_supplement.py` | `source/gharchive_raw/` | `cleaned/gharchive_supplement/` | ⬜ 待執行（需 00a）|
-| 09 | `09_repo_era_deep_dive.py` | `source/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/repo_era_deep_dive/` | ✅ 完成 |
-| 00c | `00_download_gharchive_2022q1.sh` | GH Archive website (HTTP) | `source/gharchive_2022q1/` | 🔄 執行中（PID 1600750，2022-01-01 起）|
+| 09 | `09_repo_era_deep_dive.py` | `source/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/repo_era_deep_dive/` | ✅ 完成（資料 86% 完整，需重跑）|
+| 00c | `00_download_gharchive_2022q1.sh` | GH Archive website (HTTP) | `source/gharchive_2022q1/` | 🔄 執行中（PID 2763232，1,972/2,160 檔，91%）|
 | 00d | `00_clean_gharchive_2022q1.py` | `source/gharchive_2022q1/` | `cleaned/gharchive_2022q1/` | ⬜ 待執行（需 00c）|
-| 08 | `08_era_comparison.py` | `cleaned/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/era_comparison/` | ⬜ 待執行（需 00d）|
+| 00e | `00_download_gharchive_2023q1.sh` | GH Archive website (HTTP) | `source/gharchive_2023q1/` | 🔄 執行中（PID 2797523，42/2,160 檔，2%）|
+| 00f | `00_clean_gharchive_2023q1.py` | `source/gharchive_2023q1/` | `cleaned/gharchive_2023q1/` | ⬜ 待執行（需 00e）|
+| 00g | `00_download_gharchive_2024q1.sh` | GH Archive website (HTTP) | `source/gharchive_2024q1/` | 🔄 執行中（PID 2797524，48/2,160 檔，2%）|
+| 00h | `00_clean_gharchive_2024q1.py` | `source/gharchive_2024q1/` | `cleaned/gharchive_2024q1/` | ⬜ 待執行（需 00g）|
+| 08 | `08_era_comparison.py` | `cleaned/gharchive_2022q1/` + by2566 2025 Q1 | `analytics/era_comparison/` | ⬜ 待執行（需 00d，計畫擴展為 4 年 Q1 對比）|
 
 ---
 
