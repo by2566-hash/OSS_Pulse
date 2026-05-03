@@ -164,8 +164,10 @@ cleaned = (
 
 OUT = "/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_supplement"
 
+cleaned = cleaned.cache()
+row_count = cleaned.count()  # triggers cache, avoids double scan
 cleaned.write.mode("overwrite").partitionBy("event_date").parquet(OUT)
 
-print(f"Done. Total cleaned records: {cleaned.count()}")
+print(f"Done. Total cleaned records: {row_count}")
 print(f"Output: {OUT}")
 spark.stop()

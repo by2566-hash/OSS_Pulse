@@ -42,6 +42,7 @@ from pyspark.sql import functions as F
 
 spark = SparkSession.builder.appName("08_EraComparison").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
+spark.conf.set("spark.sql.shuffle.partitions", "200")
 
 OUT = "/user/jl17797_nyu_edu/oss_pulse/analytics/era_comparison"
 
@@ -91,6 +92,7 @@ for e in eras[1:]:
     gh = gh.unionByName(e)
 
 gh.cache()
+gh.count()  # triggers cache materialisation before 4 aggregations
 
 # ── 1. Summary metrics ────────────────────────────────────────────────────────
 

@@ -15,14 +15,24 @@ Run:
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-spark = SparkSession.builder.appName("04_TopReposAll").getOrCreate()
+spark = SparkSession.builder.appName("04_TopReposAll") \
+    .config("spark.sql.warehouse.dir",
+            "hdfs:///user/jl17797_nyu_edu/oss_pulse/warehouse") \
+    .enableHiveSupport() \
+    .getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
+spark.conf.set("spark.sql.shuffle.partitions", "400")
 
-# 跳過 HDFS DataNode 損毀的 partition（BlockMissingException on 192.168.1.17）
+# 優先讀 bucketed table（GROUP BY repo_name 無需 shuffle）
+# 如不存在則 fallback 到原始 parquet（需 83 GB shuffle）
 BAD_DATES = {"2025-06-09", "2025-08-08", "2025-11-13", "2025-11-30"}
-
-gh_2025 = spark.read.parquet("/user/by2566_nyu_edu/oss_pulse/cleaned/gharchive/2025/") \
-  .filter(~F.col("event_date").cast("string").isin(BAD_DATES))
+try:
+    gh_2025 = spark.table("oss_pulse.gharchive_2025_bucketed")
+    print("INFO: reading from bucketed table (shuffle-free)")
+except Exception:
+    gh_2025 = spark.read.parquet("/user/by2566_nyu_edu/oss_pulse/cleaned/gharchive/2025/") \
+        .filter(~F.col("event_date").cast("string").isin(BAD_DATES))
+    print("INFO: bucketed table not found, falling back to parquet (83 GB shuffle)")
 
 # Supplement: 2025-12-01 to 2026-04-30 (Job 09 output)
 SUPPLEMENT = "/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_supplement"

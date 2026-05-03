@@ -27,6 +27,7 @@ import json
 
 spark = SparkSession.builder.appName("06_StarGrowthHype").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
+spark.conf.set("spark.sql.shuffle.partitions", "200")
 
 seed_raw = spark.sparkContext.wholeTextFiles(
     "/user/jl17797_nyu_edu/oss_pulse/source/seed_repos.json"
@@ -77,10 +78,11 @@ hype = monthly.withColumn("avg_monthly_stars", F.avg("monthly_stars").over(w)) \
   .orderBy(F.desc("peak_ratio")) \
   .cache()
 
+row_count = hype.count()  # triggers cache materialisation
 hype.write.mode("overwrite").parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/star_growth_hype")
 hype.coalesce(1).write.mode("overwrite").csv(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/star_growth_hype_csv", header=True)
 
-print(f"Done. Rows: {hype.count()}")
+print(f"Done. Rows: {row_count}")
 spark.stop()

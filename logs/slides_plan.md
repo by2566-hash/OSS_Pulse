@@ -211,6 +211,21 @@ GitHub 活躍度嚴重低估了它在生產環境的滲透率。
 Health score 前 3 名（transformers / ultralytics / pytorch）在 top_repos 1000 名中的 stars 排名分別為 #109 / #67 / #186。
 Stars 不足以預測生態健康；PyPI + HF 組合才能捕捉真實的工程採用訊號。
 
+**Finding 6 — Star 爆紅模式：40% 有爆點，僅 0.2% 極端**
+_Based on: `star_growth_hype.csv` (1,000 repos, Job 06)_
+- **40%** top-1000 repo 的 peak_ratio > 3x（有明顯爆發），但多數無法持續
+- 僅 **2 個 repo**（0.2%）peak_ratio > 10：`zama-ai/bounty-program`（10.83x，98.5% stars 集中單月）
+- **DeepSeek** 14 個 repo 幾乎全部 > 5x——品牌型爆紅生態系
+- **InkOnChain** 三個 repo 同步 ~8.9x，總 stars 各逾 4 萬——疑似 Web3 社群組織動員
+- `build-your-own-x`：**95,857 stars，peak_ratio 僅 2.5**——最大規模來自最平穩成長
+
+**反直覺：AI 框架比非 AI 更不爆紅**
+- AI repo（is_ai=true）平均 peak_ratio：**2.10**
+- 非 AI repo 平均 peak_ratio：**3.17**
+- 原因：seed list 中的成熟 AI 框架（transformers/pytorch/vllm）靠口碑穩定成長，不靠爆紅事件。
+
+> *"A high peak ratio tells you a project went viral. A high total stars with a low peak ratio tells you a project is healthy."*
+
 ---
 
 ## Slide 13 — Obstacles

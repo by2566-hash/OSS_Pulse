@@ -29,6 +29,7 @@ import json
 
 spark = SparkSession.builder.appName("07_ContributorHealth").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
+spark.conf.set("spark.sql.shuffle.partitions", "200")
 
 seed_raw = spark.sparkContext.wholeTextFiles(
     "/user/jl17797_nyu_edu/oss_pulse/source/seed_repos.json"
@@ -60,7 +61,7 @@ total_contrib = gh.groupBy("repo_name") \
 # Push contributors + top1 concentration
 push = gh.filter(F.col("event_type") == "PushEvent")
 push_per_actor = push.groupBy("repo_name", "actor_login") \
-  .agg(F.count("*").alias("push_count"))
+  .agg(F.count("*").alias("push_count")).cache()
 
 from pyspark.sql.window import Window
 w = Window.partitionBy("repo_name").orderBy(F.desc("push_count"))
@@ -92,10 +93,11 @@ result = total_contrib \
   .orderBy(F.desc("total_contributors")) \
   .cache()
 
+row_count = result.count()  # triggers cache materialisation
 result.write.mode("overwrite").parquet(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/contributor_health")
 result.coalesce(1).write.mode("overwrite").csv(
     "/user/jl17797_nyu_edu/oss_pulse/analytics/contributor_health_csv", header=True)
 
-print(f"Done. Rows: {result.count()}")
+print(f"Done. Rows: {row_count}")
 spark.stop()
