@@ -151,6 +151,63 @@ hdfs dfs -rm -r "$RAW_2022"   # free ~151 GB before 2023-Q1 starts
 
 **Outcome:** 5-year Q1 timeline (2022–2026) ingested within 500 GB quota. Era comparison across Pre-ChatGPT → LLM explosion → Coding-agent saturation enabled.
 
+**Challenge 3 — Era comparison: 90 GB across 5 eras, 48 GB executor memory:**
+Job 08 needs to aggregate 5 years of Q1 data (~90 GB). Naïve approach (cache all → 4 aggregations) failed: cache spills to disk → slower than direct parquet read → YARN kills job after 1.5h.
+
+**Solution v1 — Column pruning + aggregation merging + dynamic shuffle partitions:**
+```python
+# 1. Each aggregation loads only needed columns (3-6 vs 22 total)
+#    Parquet column pruning cuts I/O by 50-70%
+gh = load_all(["event_type", "repo_name", "actor_login", ...])
+
+# 2. Merge summary_metrics + push_size_distribution into single scan
+#    (both groupBy "era" = 5 groups → one pass instead of two)
+combined = gh.groupBy("era").agg(
+    # summary metrics + push distribution in one agg()
+)
+
+# 3. Dynamic shuffle partitions: 24 for groupBy("era"),
+#    200 for groupBy("era", "repo_name")
+spark.conf.set("spark.sql.shuffle.partitions", "24")  # 5 groups
+```
+
+**What we would do differently — Per-era pre-aggregation:**
+Current design unions 5 eras (90 GB) then shuffles — each aggregation shuffles the full 90 GB. Better approach: process each era independently (15-23 GB each), compute all 4 metrics per era, then merge 5 small result sets.
+
+| | Current (union-first) | Per-era (aggregate-first) |
+|---|---|---|
+| Peak memory | 90 GB (exceeds 48 GB RAM) | 15-23 GB (fits easily) |
+| Shuffle per aggregation | 90 GB | 15-23 GB |
+| Failure blast radius | All eras restart | Only failed era restarts |
+| Estimated runtime | 2-3 hours | 40-60 minutes |
+| YARN timeout risk | High | None (each era ~10 min) |
+
+```python
+# Per-era design (more resilient):
+for path, era_label, date_filter in ERA_SOURCES:
+    df = load_era(path, era_label, date_filter, columns)
+    metrics = df.groupBy(F.lit(era_label).alias("era")).agg(...)
+    metrics.write.mode("overwrite").parquet(f"{OUT}/intermediate/{era_label}")
+
+# Combine 5 tiny results → final CSV
+spark.read.parquet(f"{OUT}/intermediate/").coalesce(1).write.csv(...)
+```
+
+**Challenge 4 — PR event double counting:**
+GH Archive records multiple events per PR lifecycle (opened, closed, synchronize, edited). Counting `event_type == 'PullRequestEvent'` overcounts PRs. Agent-generated PRs trigger more `synchronize` events, biasing the "higher PR merge rate" hypothesis.
+
+**Solution:** Use `countDistinct(pr_number)` instead of event count, and filter `payload_action == 'closed' AND pr_merged == True` for merge rate:
+```python
+F.countDistinct(F.when(
+    F.col("event_type") == "PullRequestEvent", F.col("pr_number")
+)).alias("distinct_prs"),
+F.countDistinct(F.when(
+    (F.col("payload_action") == "closed") &
+    (F.col("pr_merged").eqNullSafe(True)),
+    F.col("pr_number")
+)).alias("merged_prs"),
+```
+
 ---
 
 ## Slide 11 — Code Challenge: by2566 — Billion-Record Shuffle at Ecosystem Scale
@@ -283,6 +340,8 @@ GitHub PushEvent 包含 PR merge（歸屬按 merge 的人），因此 top1_push_
 - Built an end-to-end Spark pipeline combining 3 heterogeneous data sources at ~146M-event scale (485+ days)
 - Computed a composite health score for 36 AI repos across community, adoption, and engineering dimensions
 - Analyzed contributor health and bus-factor risk for top 1,000 repos
+- 5-year era comparison (2022–2026 Q1) tracking coding-agent impact on OSS ecosystem
+- Deep-dive: ~250 repos (AI vs Non-AI) across 5 eras — PR merge time, commit patterns, contributor flow
 - **Key takeaway:** GitHub stars are a noisy signal; PyPI + HF downloads together better predict sustained ecosystem health. Push contributor concentration (top1_push_ratio) reveals single-maintainer risk invisible to star counts.
 - Framework-agnostic methodology — extensible to any open-source domain
 
@@ -317,8 +376,10 @@ GitHub PushEvent 包含 PR merge（歸屬按 merge 的人），因此 top1_push_
 - [x] Jobs 04 / 05 / 06 / 07 跑完 → 填入 Slide 12 實際數字（9 findings）
 - [x] Supplement data cleaned (151 days, Dec 2025 – Apr 2026)
 - [x] Contributor health analysis (Finding 7-9)
-- [ ] Job 08 (era comparison) — 等 2023/2024 Q1 下載+清理完
-- [ ] 2023 Q1 下載中（1162/2160, 54%），2024 Q1 待下載
+- [x] 2022 / 2023 / 2024 Q1 下載 + 清理完成
+- [ ] Job 08 (era comparison) — 跑中（per-era 設計重寫，解決 YARN timeout）
+- [ ] Job 09 (repo era deep dive) — 擴展到 ~250 repos（seed AI + top 200 non-AI），加 group-level AI vs Non-AI 對比
+- [ ] Job 08 / 09 結果分析 → 填入 Slide 12 era findings
 - [ ] Tableau 圖表截圖 → 插入 Slide 12（最多 3 張）
 - [ ] Design Diagram 換成視覺圖（可用 draw.io / Keynote）
 - [ ] Data Sample slides 換成真實資料截圖（from Jupyter or Spark output）

@@ -19,6 +19,7 @@ from pyspark.sql.types import (
 
 spark = SparkSession.builder.appName("00_CleanGHArchive2023Q1").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
+spark.conf.set("spark.sql.files.ignoreCorruptFiles", "true")
 
 # ── Inline schema (mirrors gharchive_schema.py) ──────────────────────────────
 
