@@ -60,10 +60,8 @@ ERA_SOURCES = [
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2022q1", "2022-Q1", None),
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2023q1", "2023-Q1", None),
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2024q1", "2024-Q1", None),
-    ("/user/by2566_nyu_edu/oss_pulse/cleaned/gharchive/2025", "2025-Q1",
-     ("2025-01-01", "2025-03-31")),
-    ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_supplement", "2026-Q1",
-     ("2026-01-01", "2026-03-31")),
+    ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2025q1", "2025-Q1", None),
+    ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2026q1", "2026-Q1", None),
 ]
 
 COLS = ["event_id", "event_type", "event_ts", "event_date",
