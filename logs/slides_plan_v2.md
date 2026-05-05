@@ -186,9 +186,11 @@ for path, era in ERA_SOURCES:
 |-----------|---------|-------|-----------|
 | True leader | transformers | 13K | PyPI 938M + HF 835K models |
 | Quiet powerhouse | sentence-transformers | 1.6K | HF 519M downloads |
-| Hype machine | ollama | 44.5K | HF 241 downloads |
+| Ecosystem outsider | ollama | 44.5K | PyPI 47.8M but HF 241 |
 
-**Punchline:** _"Every star on sentence-transformers represents 327,014 HF downloads. Stars measure attention, not adoption."_
+**The Ollama paradox:** 44,520 stars AND 47.8M PyPI downloads — a genuinely healthy project that scores low (9.3) because it operates outside the HF ecosystem (has its own model registry). This reveals a **limitation** of any single-framework health score: projects with alternative distribution channels get penalized.
+
+**Punchline:** _"Every star on sentence-transformers represents 327,014 HF downloads. But Ollama proves that low HF downloads doesn't mean low adoption — it means different ecosystem."_
 
 Health score formula: HF downloads 30% + PyPI 20% + GH stars 15% + pushes 15% + PRs 10% + active days 10%
 

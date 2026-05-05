@@ -20,7 +20,8 @@ _Last updated: 2026-05-05_
 - HuggingFace 模型下載量 × GitHub 活動交叉比對（35 筆）
 - **Key finding:** HF 下載量與 GH stars 不正相關
   - sentence-transformers：5.19 億下載，僅 1,588 stars（成熟穩定）
-  - ollama：241 下載，44,520 stars（GH 熱門但不走 HF 生態）
+  - ollama：HF 241 下載但 PyPI 4787 萬 — 不是 hype，是走不同生態（自有 model registry）
+  - **方法學限制：** Health score 對 HF 外的分發管道有盲區
 
 ### Job 03 — health_score
 - 三方合併健康分數：HF downloads 30% + PyPI 20% + GH stars 15% + GH pushes 15% + GH PRs 10% + active_days 10%
@@ -31,7 +32,7 @@ _Last updated: 2026-05-05_
   4. sentence-transformers (12.7)
   5. diffusers (12.6)
 
-**Story: Stars ≠ Health. 真正的健康需要三角驗證（GH 活躍度 + HF 模型採用 + PyPI 安裝量）**
+**Story: Stars ≠ Health. 真正的健康需要三角驗證（GH 活躍度 + HF 模型採用 + PyPI 安裝量），但方法本身有盲區 — Ollama 證明不走 HF 生態不代表不健康。**
 
 ---
 
