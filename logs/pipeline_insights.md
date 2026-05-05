@@ -104,6 +104,47 @@ _Last updated: 2026-05-05_
 
 ---
 
+## Layer 5: Development Rhythm Changes (Job 10 — Completed)
+
+### Job 10 — dev_rhythm_analysis
+
+#### Weekend vs Weekday Activity Ratio
+
+| Era | Weekday Events | Weekend Events | Weekend % | Weekend Actors % |
+|-----|---------------|---------------|-----------|-----------------|
+| 2022-Q1 | 1.53 億 | 5328 萬 | 25.8% | 34.3% |
+| 2023-Q1 | 1.89 億 | 5876 萬 | 23.7% | 34.1% |
+| 2024-Q1 | 2.68 億 | 9591 萬 | 26.3% | 35.0% |
+| 2025-Q1 | 2.75 億 | 1.01 億 | 26.9% | 35.4% |
+| 2026-Q1 | 1.87 億 | 7910 萬 | **29.7%** | **36.9%** |
+
+Natural weekend ratio in Q1 (~90 days) ≈ 29%. 2026 nearly matches it — weekday/weekend gap is closing. This is a strong signal of 24/7 agent activity.
+
+Note: Weekend defined by UTC timezone; consistent across all eras for trend comparison.
+
+#### Push Frequency per Actor
+
+| Metric | 2022 | 2023 | 2024 | 2025 | 2026 |
+|--------|------|------|------|------|------|
+| Push actors | 4.52M | 5.20M | 5.89M | 6.95M | **8.71M** |
+| Avg pushes | 32.4 | 35.7 | **52.2** | 45.1 | 25.8 |
+| Median pushes | 6 | 6 | 6 | 6 | **4** |
+| P90 pushes | 46 | 49 | 47 | 46 | **32** |
+| P99 pushes | 235 | 250 | 239 | 245 | **206** |
+| >1000 pushes accounts | 4,168 | 4,135 | 5,347 | **9,788** | 6,351 |
+| >50 pushes/day accounts | 4,139 | 4,171 | 6,197 | **12,743** | 6,575 |
+| Avg repos per actor | 2.77 | 2.88 | 2.82 | 2.77 | **2.41** |
+
+**Key findings:**
+1. **2026 push actors surged to 8.71M** (+25% YoY) — but per-actor pushes dropped sharply (median 6→4, avg 45→26). More people participating, each doing less.
+2. **2025 was peak for high-frequency pushers:** >1000 pushes accounts nearly doubled (5,347→9,788), >50/day tripled (6,197→12,743) — early agent explosion.
+3. **2026 high-frequency accounts dropped back** — likely GitHub's bot account cleanup reducing automated pushers.
+4. **Avg repos per actor declining** (2.88→2.41) — contrary to expectation that agents spread across repos. May reflect more single-repo casual contributors.
+
+**Story: The coding agent era shows two phases — 2025 was the explosion (high-frequency automated pushers peaked), 2026 is the normalization (platform cleanup + behavior adaptation). Weekend activity ratio climbing toward natural levels confirms 24/7 automated development.**
+
+---
+
 ## Overall Narrative (Presentation Main Thread)
 
 > **2022-2026，OSS 生態經歷了三個轉變：**

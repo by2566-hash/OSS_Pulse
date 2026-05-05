@@ -237,6 +237,8 @@ Data quality check revealed WatchEvent (stars) dropped **63%** (19.6M → 7.2M) 
 
 **Solution:** In cross-era analysis, treat WatchEvent/ForkEvent trends for 2026-Q1 with caution and note the likely influence of platform-level anti-spam measures. Use PushEvent, PREvent, and IssuesEvent as more reliable indicators for trend analysis.
 
+**Note on timezone:** All timestamps in GH Archive are UTC. Weekend/weekday classification is based on UTC date, which introduces a systematic bias (e.g., Saturday morning in Asia = Friday UTC). This bias is consistent across all eras, so cross-era trend comparisons remain valid.
+
 ---
 
 ## Slide 11 — Code Challenge: by2566 — Billion-Record Shuffle at Ecosystem Scale
