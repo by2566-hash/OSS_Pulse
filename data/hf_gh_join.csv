@@ -1,22 +1,16 @@
-
-please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
-
 repo_name,category,library_name,hf_model_count,hf_total_downloads,hf_total_likes,gh_stars_2025,gh_forks_2025,gh_pushes_2025,gh_prs_2025,gh_issues_2025,gh_active_days
 huggingface/transformers,framework,transformers,834591,1421767931,1216240,13095,3316,8483,5866,2840,332
 ukplab/sentence-transformers,embedding,sentence-transformers,17515,519299026,55176,1588,156,122,237,263,285
-rwightman/pytorch-image-models,vision,timm,2768,50668729,3278,,,,,,
 pyannote/pyannote-audio,audio,pyannote-audio,97,44130929,6108,1506,129,131,95,78,324
 huggingface/diffusers,diffusion,diffusers,103385,37292362,329961,3617,818,3079,1893,974,329
 mlfoundations/open_clip,vision,open_clip,642,24777414,3666,1745,172,43,34,103,313
 ultralytics/ultralytics,vision,ultralytics,720,17516769,3266,10865,2189,9180,2530,4474,330
 ml-explore/mlx,framework,mlx,8754,12595212,11148,3857,288,1127,980,453,328
-apple/ml-mxnet,framework,mlx,8754,12595212,11148,,,,,,
 vllm-project/vllm,serving,vllm,877,10957117,30042,22697,4368,6698,15794,9495,332
 coqui-ai/tts,audio,coqui,70,7072476,3944,5880,943,0,30,160,330
 huggingface/peft,framework,peft,243358,3515979,8654,2529,346,224,484,288,328
 speechbrain/speechbrain,audio,speechbrain,303,2679635,2045,1243,144,126,152,74,318
 flairnlp/flair,nlp,flair,1785,1100587,841,306,26,157,82,161,218
-flair/flair,nlp,flair,1785,1100587,841,,,,,,
 mlc-ai/mlc-llm,inference,mlc-llm,686,309757,226,1805,199,180,171,203,320
 keras-team/keras,framework,keras,4674,210165,728,1566,357,445,1374,614,329
 pytorch/pytorch,framework,torch,166,132378,66,8351,2483,89880,31731,13801,333

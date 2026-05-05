@@ -348,6 +348,40 @@ GitHub PushEvent 包含 PR merge（歸屬按 merge 的人），因此 top1_push_
 
 > *"Stars count your audience. Push contributors count your builders. A healthy project needs both."*
 
+**Finding 10 — Coding Agent 讓週末/平日差異消失**
+_Based on: `dev_rhythm/weekday_weekend.csv` (Job 10, all GitHub repos)_
+
+| Era | Weekend Event % | Weekend Push % | Weekend PR % |
+|-----|----------------|---------------|-------------|
+| 2022-Q1 | 25.8% | 24.8% | 31.6% |
+| 2023-Q1 | 23.7% | 24.6% | 18.4% |
+| 2024-Q1 | 26.3% | 27.2% | 18.6% |
+| 2025-Q1 | 26.9% | 27.6% | 20.3% |
+| 2026-Q1 | **29.7%** | **29.4%** | **29.5%** |
+
+Natural weekend ratio (26/90 days) ≈ 28.9%. By 2026, weekend activity matches natural proportion — the weekday/weekend gap has essentially disappeared. This is consistent with 24/7 automated agent activity.
+
+PushEvent weekend ratio climbed from 24.8% → 29.4% — the strongest signal since push is the most direct "writing code" action.
+
+PREvent weekend ratio shows a U-shape: high in 2022 (early CI bots), crashed in 2023-2024, then recovered to 29.5% in 2026 (coding agents opening PRs on weekends).
+
+**Finding 11 — Agent 時代的兩個階段：2025 爆發，2026 正常化**
+_Based on: `dev_rhythm/push_per_actor.csv` (Job 10)_
+
+| Metric | 2022 | 2023 | 2024 | 2025 | 2026 |
+|--------|------|------|------|------|------|
+| Push actors | 4.52M | 5.20M | 5.89M | 6.95M | **8.71M** |
+| Avg pushes/actor | 32.4 | 35.7 | 52.2 | 45.1 | **25.8** |
+| Median pushes | 6 | 6 | 6 | 6 | **4** |
+| >1000 pushes accounts | 4,168 | 4,135 | 5,347 | **9,788** | 6,351 |
+| >50 pushes/day accounts | 4,139 | 4,171 | 6,197 | **12,743** | 6,575 |
+
+**2025 = Agent explosion:** High-frequency pushers (>1000 pushes/quarter) nearly doubled, >50 pushes/day tripled to 12,743. These are likely early coding agents (Cursor, Copilot Workspace) and bot accounts running at superhuman rates.
+
+**2026 = Normalization:** High-frequency accounts dropped back (GitHub bot cleanup + agent behavior optimization), but total push actors surged +25% to 8.71M. Per-actor pushes dropped (median 6→4). Development shifted from "few people, high intensity" to "many people, lightweight participation."
+
+> *"The coding agent era has two signatures: weekends look like weekdays, and everyone pushes less but more people push."*
+
 ---
 
 ## Slide 13 — Obstacles
@@ -368,12 +402,14 @@ GitHub PushEvent 包含 PR merge（歸屬按 merge 的人），因此 top1_push_
 
 ## Slide 14 — Summary
 
-- Built an end-to-end Spark pipeline combining 3 heterogeneous data sources at ~146M-event scale (485+ days)
+- Built an end-to-end Spark pipeline combining 3 heterogeneous data sources at **1.46B-event scale** (5 × Q1 eras, 87.9 GB cleaned)
 - Computed a composite health score for 36 AI repos across community, adoption, and engineering dimensions
 - Analyzed contributor health and bus-factor risk for top 1,000 repos
 - 5-year era comparison (2022–2026 Q1) tracking coding-agent impact on OSS ecosystem
-- Deep-dive: ~250 repos (AI vs Non-AI) across 5 eras — PR merge time, commit patterns, contributor flow
-- **Key takeaway:** GitHub stars are a noisy signal; PyPI + HF downloads together better predict sustained ecosystem health. Push contributor concentration (top1_push_ratio) reveals single-maintainer risk invisible to star counts.
+- Development rhythm analysis: weekend activity ratio, push frequency distribution across 5 eras
+- **Key takeaway 1:** GitHub stars are a noisy signal; PyPI + HF downloads together better predict sustained ecosystem health
+- **Key takeaway 2:** The coding agent era shows two phases — 2025 explosion (high-frequency pushers tripled) → 2026 normalization (more developers, lighter participation, weekday/weekend gap disappeared)
+- **Key takeaway 3:** Push contributor concentration (top1_push_ratio) reveals single-maintainer risk invisible to star counts
 - Framework-agnostic methodology — extensible to any open-source domain
 
 ---

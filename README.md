@@ -39,7 +39,8 @@ OSS_Pulse/
 │   ├── 06_star_growth_hype.py                # hype detection
 │   ├── 07_contributor_health.py              # contributor diversity
 │   ├── 08_era_comparison.py                  # cross-era comparison (2022–2026 Q1)
-│   └── 09_repo_era_deep_dive.py              # per-repo era deep dive (AI vs non-AI)
+│   ├── 09_repo_era_deep_dive.py              # per-repo era deep dive (AI vs non-AI)
+│   └── 10_dev_rhythm.py                      # development rhythm (weekend/weekday, push frequency)
 │
 ├── src/main/scala/osspulse/    # Scala Spark pipeline (HF Hub ingestion)
 ├── build.sbt
@@ -103,6 +104,8 @@ OSS_Pulse/
 | 06 | `star_growth_hype` | Star growth rate and hype detection |
 | 07 | `contributor_health` | Bus factor, push concentration, contributor diversity |
 | 08 | `era_comparison` | Cross-era comparison across 5 Q1 snapshots (2022–2026) |
+| 09 | `repo_era_deep_dive` | Per-repo deep dive across eras (AI vs non-AI) |
+| 10 | `dev_rhythm` | Development rhythm: weekend/weekday ratio, push frequency |
 
 ---
 

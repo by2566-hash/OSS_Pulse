@@ -1,0 +1,108 @@
+[
+  {"repo": "huggingface/transformers",        "category": "framework",    "hf_library": "transformers"},
+  {"repo": "huggingface/peft",                "category": "framework",    "hf_library": "peft"},
+  {"repo": "huggingface/diffusers",           "category": "diffusion",    "hf_library": "diffusers"},
+  {"repo": "huggingface/datasets",            "category": "framework",    "hf_library": "datasets"},
+  {"repo": "huggingface/accelerate",          "category": "framework",    "hf_library": "accelerate"},
+  {"repo": "huggingface/trl",                 "category": "training",     "hf_library": "trl"},
+  {"repo": "huggingface/tokenizers",          "category": "framework",    "hf_library": null},
+  {"repo": "huggingface/huggingface_hub",     "category": "framework",    "hf_library": "huggingface-hub"},
+  {"repo": "huggingface/optimum",             "category": "inference",    "hf_library": "optimum"},
+  {"repo": "huggingface/text-generation-inference", "category": "serving", "hf_library": null},
+
+  {"repo": "vllm-project/vllm",               "category": "serving",      "hf_library": "vllm"},
+  {"repo": "ollama/ollama",                   "category": "serving",      "hf_library": "ollama"},
+  {"repo": "ggerganov/llama.cpp",             "category": "inference",    "hf_library": "llama-cpp-python"},
+  {"repo": "mlc-ai/mlc-llm",                 "category": "inference",    "hf_library": "mlc-llm"},
+  {"repo": "microsoft/onnxruntime",           "category": "inference",    "hf_library": "onnxruntime"},
+  {"repo": "openai/tiktoken",                 "category": "framework",    "hf_library": null},
+  {"repo": "openai/whisper",                  "category": "audio",        "hf_library": null},
+  {"repo": "openai/openai-python",            "category": "llm-tooling",  "hf_library": "openai"},
+
+  {"repo": "langchain-ai/langchain",          "category": "llm-tooling",  "hf_library": "langchain"},
+  {"repo": "run-llama/llama_index",           "category": "rag",          "hf_library": "llama-index"},
+  {"repo": "deepset-ai/haystack",             "category": "rag",          "hf_library": null},
+  {"repo": "chroma-core/chroma",              "category": "rag",          "hf_library": null},
+  {"repo": "weaviate/weaviate",               "category": "rag",          "hf_library": null},
+  {"repo": "qdrant/qdrant",                   "category": "rag",          "hf_library": null},
+
+  {"repo": "microsoft/autogen",               "category": "agents",       "hf_library": null},
+  {"repo": "crewAIInc/crewAI",               "category": "agents",       "hf_library": null},
+  {"repo": "OpenDevin/OpenDevin",             "category": "agents",       "hf_library": null},
+  {"repo": "meta-llama/llama-stack",          "category": "agents",       "hf_library": null},
+  {"repo": "geekan/MetaGPT",                  "category": "agents",       "hf_library": null},
+  {"repo": "joaomdmoura/crewAI",              "category": "agents",       "hf_library": null},
+
+  {"repo": "AUTOMATIC1111/stable-diffusion-webui", "category": "diffusion", "hf_library": null},
+  {"repo": "comfyanonymous/ComfyUI",          "category": "diffusion",    "hf_library": null},
+  {"repo": "invoke-ai/InvokeAI",             "category": "diffusion",    "hf_library": null},
+  {"repo": "CompVis/stable-diffusion",        "category": "diffusion",    "hf_library": null},
+
+  {"repo": "pytorch/pytorch",                 "category": "framework",    "hf_library": "torch"},
+  {"repo": "tensorflow/tensorflow",           "category": "framework",    "hf_library": "tensorflow"},
+  {"repo": "keras-team/keras",                "category": "framework",    "hf_library": "keras"},
+  {"repo": "scikit-learn/scikit-learn",       "category": "framework",    "hf_library": "scikit-learn"},
+  {"repo": "ml-explore/mlx",                 "category": "framework",    "hf_library": "mlx"},
+
+  {"repo": "unslothai/unsloth",               "category": "training",     "hf_library": null},
+  {"repo": "axolotl-ai-cloud/axolotl",       "category": "training",     "hf_library": null},
+  {"repo": "EleutherAI/lm-evaluation-harness","category": "evaluation",  "hf_library": null},
+  {"repo": "openai/evals",                    "category": "evaluation",   "hf_library": null},
+  {"repo": "BerriAI/litellm",                "category": "llm-tooling",  "hf_library": null},
+
+  {"repo": "facebookresearch/faiss",          "category": "rag",          "hf_library": null},
+  {"repo": "UKPLab/sentence-transformers",    "category": "embedding",    "hf_library": "sentence-transformers"},
+  {"repo": "explosion/spaCy",                 "category": "nlp",          "hf_library": "spacy"},
+  {"repo": "huggingface/setfit",              "category": "nlp",          "hf_library": "setfit"},
+  {"repo": "MaartenGr/BERTopic",              "category": "nlp",          "hf_library": "bertopic"},
+
+  {"repo": "Stability-AI/stablediffusion",    "category": "diffusion",    "hf_library": null},
+  {"repo": "deep-floyd/IF",                   "category": "diffusion",    "hf_library": null},
+  {"repo": "coqui-ai/TTS",                   "category": "audio",        "hf_library": "coqui"},
+  {"repo": "pyannote/pyannote-audio",         "category": "audio",        "hf_library": "pyannote-audio"},
+  {"repo": "espnet/espnet",                   "category": "audio",        "hf_library": "espnet"},
+  {"repo": "speechbrain/speechbrain",         "category": "audio",        "hf_library": "speechbrain"},
+
+  {"repo": "ultralytics/ultralytics",         "category": "vision",       "hf_library": "ultralytics"},
+  {"repo": "open-mmlab/mmdetection",          "category": "vision",       "hf_library": null},
+  {"repo": "rwightman/pytorch-image-models",  "category": "vision",       "hf_library": "timm"},
+
+  {"repo": "microsoft/DeepSpeed",             "category": "training",     "hf_library": null},
+  {"repo": "ray-project/ray",                 "category": "training",     "hf_library": null},
+  {"repo": "Lightning-AI/pytorch-lightning",  "category": "training",     "hf_library": null},
+  {"repo": "wandb/wandb",                     "category": "training",     "hf_library": null},
+
+  {"repo": "anthropics/anthropic-sdk-python", "category": "llm-tooling",  "hf_library": "anthropic"},
+  {"repo": "mistralai/mistral-src",           "category": "llm-tooling",  "hf_library": null},
+  {"repo": "google/gemma_pytorch",            "category": "llm-tooling",  "hf_library": null},
+  {"repo": "meta-llama/llama",               "category": "llm-tooling",  "hf_library": null},
+  {"repo": "QwenLM/Qwen",                    "category": "llm-tooling",  "hf_library": null},
+
+  {"repo": "huggingface/alignment-handbook",  "category": "training",     "hf_library": null},
+  {"repo": "hiyouga/LLaMA-Factory",          "category": "training",     "hf_library": null},
+  {"repo": "oobabooga/text-generation-webui", "category": "serving",      "hf_library": null},
+  {"repo": "lm-sys/FastChat",                "category": "serving",      "hf_library": null},
+
+  {"repo": "roboflow/supervision",            "category": "vision",       "hf_library": null},
+  {"repo": "openai/CLIP",                    "category": "vision",       "hf_library": null},
+  {"repo": "mlfoundations/open_clip",        "category": "vision",       "hf_library": "open_clip"},
+
+  {"repo": "deepmind/graphcast",             "category": "science",      "hf_library": null},
+  {"repo": "microsoft/promptflow",           "category": "llm-tooling",  "hf_library": null},
+  {"repo": "guidance-ai/guidance",           "category": "llm-tooling",  "hf_library": null},
+  {"repo": "outlines-dev/outlines",          "category": "llm-tooling",  "hf_library": null},
+
+  {"repo": "stanford-crfm/helm",             "category": "evaluation",   "hf_library": null},
+  {"repo": "tatsu-lab/alpaca_eval",          "category": "evaluation",   "hf_library": null},
+
+  {"repo": "facebookresearch/fairseq",       "category": "nlp",          "hf_library": "fairseq"},
+  {"repo": "flairNLP/flair",                 "category": "nlp",          "hf_library": "flair"},
+  {"repo": "allenai/allennlp",              "category": "nlp",          "hf_library": "allennlp"},
+
+  {"repo": "deepset-ai/FARM",               "category": "nlp",          "hf_library": null},
+  {"repo": "PaddlePaddle/PaddleNLP",        "category": "nlp",          "hf_library": "paddlenlp"},
+  {"repo": "Dao-AILab/flash-attention",     "category": "framework",    "hf_library": null},
+  {"repo": "state-spaces/mamba",            "category": "framework",    "hf_library": null},
+  {"repo": "microsoft/phi-2",              "category": "llm-tooling",  "hf_library": null},
+  {"repo": "01-ai/Yi",                     "category": "llm-tooling",  "hf_library": null}
+]

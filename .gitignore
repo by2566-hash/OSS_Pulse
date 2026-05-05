@@ -5,9 +5,13 @@ __pycache__/
 # Local Spark / project outputs
 data/*
 !data/*.csv
+!data/*.json
 !data/era_comparison/
 data/era_comparison/*
 !data/era_comparison/*.csv
+!data/dev_rhythm/
+data/dev_rhythm/*
+!data/dev_rhythm/*.csv
 output/
 
 # Local HPC config
