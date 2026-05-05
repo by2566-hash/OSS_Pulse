@@ -36,8 +36,9 @@ spark.conf.set("spark.sql.shuffle.partitions", "24")
 OUT = "/user/jl17797_nyu_edu/oss_pulse/analytics/era_comparison"
 
 ERA_SOURCES = [
-    ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2022q1", "2022-Q1", None),
-    ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2023q1", "2023-Q1", None),
+    # 2022 and 2023 intermediate results already saved — skip
+    # ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2022q1", "2022-Q1", None),
+    # ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2023q1", "2023-Q1", None),
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2024q1", "2024-Q1", None),
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2025q1", "2025-Q1", None),
     ("/user/jl17797_nyu_edu/oss_pulse/cleaned/gharchive_2026q1", "2026-Q1", None),
@@ -164,18 +165,41 @@ for path, era, date_filter in ERA_SOURCES:
     monthly_rows.append(monthly)
     print(f"[OK] {era} active_monthly done")
 
+    # ── Write intermediate results per era (crash-safe) ───────────────────
+    era_tag = era.replace("-", "_")
+    summary.coalesce(1).write.mode("overwrite").option("header", True) \
+        .csv(f"{OUT}/intermediate/summary_{era_tag}")
+    push_dist.coalesce(1).write.mode("overwrite").option("header", True) \
+        .csv(f"{OUT}/intermediate/push_dist_{era_tag}")
+    pr_ratio.coalesce(1).write.mode("overwrite").option("header", True) \
+        .csv(f"{OUT}/intermediate/pr_ratio_{era_tag}")
+    monthly.coalesce(1).write.mode("overwrite").option("header", True) \
+        .csv(f"{OUT}/intermediate/monthly_{era_tag}")
+    print(f"[OK] {era} intermediate results saved to HDFS")
+
     df.unpersist()
     print(f"[OK] {era} complete")
 
 # ── Merge and write final CSVs ────────────────────────────────────────────────
 
-print("\n[INFO] Merging results...")
+print("\n[INFO] Merging results (including 2022/2023 from intermediate)...")
 
 def union_all(dfs):
     result = dfs[0]
     for d in dfs[1:]:
         result = result.unionByName(d, allowMissingColumns=True)
     return result
+
+# Load 2022/2023 intermediate results
+INTER = f"{OUT}/intermediate"
+PREV_ERAS = ["2022_Q1", "2023_Q1"]
+
+for era_tag in PREV_ERAS:
+    summary_rows.insert(0, spark.read.option("header", True).csv(f"{INTER}/summary_{era_tag}"))
+    push_dist_rows.insert(0, spark.read.option("header", True).csv(f"{INTER}/push_dist_{era_tag}"))
+    pr_ratio_rows.insert(0, spark.read.option("header", True).csv(f"{INTER}/pr_ratio_{era_tag}"))
+    monthly_rows.insert(0, spark.read.option("header", True).csv(f"{INTER}/monthly_{era_tag}"))
+print("[OK] 2022/2023 intermediate loaded")
 
 (union_all(summary_rows).orderBy("era").coalesce(1)
  .write.mode("overwrite").option("header", True)

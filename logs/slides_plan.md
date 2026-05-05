@@ -38,8 +38,10 @@ _Deadline: 2026-05-05 | Last updated: 2026-05-02_
 
 | Dimension | Metric | Value |
 |-----------|--------|-------|
-| Completeness | GH Archive day coverage | 334 / 365 days (bad-date filtered) |
-| Volume | Total GH events | ~100M |
+| Completeness | GH Archive coverage | 485+ days across 5 Q1 eras (2022-2026) + 2025 full year |
+| Volume | Total GH events | ~1.46B (Q1 eras) + 2025 full year |
+| Data size | Raw ingested | ~930+ GB |
+| Data size | Cleaned Parquet | ~183 GB (87.9 GB Q1 + 67.5 GB 2025 + 27.3 GB supplement) |
 | Freshness | HF Hub snapshot | April 2026 |
 | Breadth | PyPI libraries tracked | 46 |
 | Scale | HF models indexed | 2,815,064 |
@@ -50,8 +52,8 @@ _Deadline: 2026-05-05 | Last updated: 2026-05-02_
 
 | Source | Description | Size |
 |--------|-------------|------|
-| GitHub Archive | Hourly event logs: Watch / Fork / Push / PR / Issue | ~100M events, 334 days |
-| Hugging Face Hub | Model metadata snapshot (April 2026) | 2,815,064 models |
+| GitHub Archive | Hourly event logs: Watch / Fork / Push / PR / Issue | ~1.46B events, 485+ days, 87.9 GB cleaned (930+ GB raw) |
+| Hugging Face Hub | Model metadata snapshot (April 2026) | 2,815,064 models, 229 MB |
 | PyPI | Monthly download counts per library (2025) | 46 libraries × 12 months |
 
 ---
