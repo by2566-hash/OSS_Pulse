@@ -211,7 +211,7 @@ F.countDistinct(F.when(
 ```
 
 **Challenge 5 — GH Archive 2026 breaking schema change:**
-GH Archive silently changed its payload schema between Dec 2025 and Jan 2026:
+GitHub officially announced Events API payload simplification on **2025-08-08**, effective **2025-10-07** ([GitHub Blog Changelog](https://github.blog/changelog/2025-08-08-upcoming-changes-to-github-events-api-payloads/)):
 - **PushEvent:** `commits`, `distinct_size`, and `size` fields removed — only `before`, `head`, `push_id`, `ref` remain
 - **PullRequestEvent:** `pull_request.merged` field removed, `merged_at` removed; instead `payload.action` now emits `"merged"` as a new action value (previously only `opened/closed/synchronize/edited`)
 
@@ -229,6 +229,13 @@ F.countDistinct(F.when(
 )).alias("merged_prs"),
 ```
 `push_distinct_size` cannot be recovered — the field no longer exists in the raw data. Noted in analysis as a data limitation for 2026-Q1.
+
+**Challenge 6 — 2026 Q1 WatchEvent/ForkEvent anomalous drop:**
+Data quality check revealed WatchEvent (stars) dropped **63%** (19.6M → 7.2M) and ForkEvent dropped **67%** (4.6M → 1.5M) between 2025-Q1 and 2026-Q1. Each WatchEvent represents a new star action. GH Archive is a historical snapshot — previously recorded events are not retroactively removed. Therefore the drop reflects **fewer new stars being created in 2026-Q1**, not historical events being deleted. The most likely explanation is that fake accounts identified by GitHub's anti-spam efforts have already been deleted and can no longer generate new stars/forks. An ICSE 2026 study ([arxiv.org/html/2412.13459v2](https://arxiv.org/html/2412.13459v2)) identified ~6 million fake stars across 300K accounts, and researchers observed that 90.42% of flagged repos and 57.07% of flagged accounts were subsequently removed. However, GitHub has not officially announced a mass purge — this is inferred from academic research and observed data patterns. Other contributing factors (changes to event recording criteria, natural behavior shifts) cannot be ruled out.
+
+**Impact:** 2026-Q1 star and fork counts are not directly comparable to prior eras. IssuesEvent (+9%) and PullRequestEvent (-22%) are unaffected, suggesting real development activity remains relatively stable.
+
+**Solution:** In cross-era analysis, treat WatchEvent/ForkEvent trends for 2026-Q1 with caution and note the likely influence of platform-level anti-spam measures. Use PushEvent, PREvent, and IssuesEvent as more reliable indicators for trend analysis.
 
 ---
 
