@@ -1,7 +1,7 @@
 """Quick data quality check across all 5 Q1 eras."""
 from pyspark.sql import SparkSession, functions as F
 
-spark = SparkSession.builder.master("local[2]").appName("DataQuality").getOrCreate()
+spark = SparkSession.builder.appName("DataQuality").getOrCreate()
 spark.sparkContext.setLogLevel("ERROR")
 
 ERAS = [

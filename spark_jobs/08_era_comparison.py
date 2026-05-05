@@ -90,8 +90,10 @@ for path, era, date_filter in ERA_SOURCES:
          .alias("total_stars"),
         F.countDistinct(F.when(
             (F.col("event_type") == "PullRequestEvent") &
-            (F.col("payload_action") == "closed") &
-            (F.col("pr_merged").eqNullSafe(True)),
+            (
+                ((F.col("payload_action") == "closed") & (F.col("pr_merged").eqNullSafe(True))) |
+                (F.col("payload_action") == "merged")   # 2026+ schema change
+            ),
             F.col("pr_number")
         )).alias("merged_prs"),
         F.avg(F.when(

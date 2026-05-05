@@ -125,8 +125,8 @@ for path, era, date_filter in ERA_SOURCES:
         events
         .filter(
             (F.col("event_type") == "PullRequestEvent") &
-            (F.col("payload_action") == "closed") &
-            (F.col("pr_merged").eqNullSafe(True))
+            ((F.col("payload_action") == "closed") & (F.col("pr_merged").eqNullSafe(True))) |
+            (F.col("payload_action") == "merged")   # 2026+ schema change
         )
         .select("era", "repo_name", "pr_number",
                 F.col("event_ts").alias("merged_ts"))

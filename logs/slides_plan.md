@@ -210,6 +210,26 @@ F.countDistinct(F.when(
 )).alias("merged_prs"),
 ```
 
+**Challenge 5 — GH Archive 2026 breaking schema change:**
+GH Archive silently changed its payload schema between Dec 2025 and Jan 2026:
+- **PushEvent:** `commits`, `distinct_size`, and `size` fields removed — only `before`, `head`, `push_id`, `ref` remain
+- **PullRequestEvent:** `pull_request.merged` field removed, `merged_at` removed; instead `payload.action` now emits `"merged"` as a new action value (previously only `opened/closed/synchronize/edited`)
+
+This caused 2026-Q1 `merged_prs = 0` (false zero) and `push_distinct_size = NULL` (all rows) in the initial era comparison run. Verified by downloading raw JSON from `data.gharchive.org` for 2025-03-15 vs 2026-03-15 and comparing payload keys.
+
+**Solution:** Add backward-compatible merged PR detection that works across both schemas:
+```python
+F.countDistinct(F.when(
+    (F.col("event_type") == "PullRequestEvent") &
+    (
+        ((F.col("payload_action") == "closed") & (F.col("pr_merged").eqNullSafe(True))) |
+        (F.col("payload_action") == "merged")   # 2026+ schema
+    ),
+    F.col("pr_number")
+)).alias("merged_prs"),
+```
+`push_distinct_size` cannot be recovered — the field no longer exists in the raw data. Noted in analysis as a data limitation for 2026-Q1.
+
 ---
 
 ## Slide 11 — Code Challenge: by2566 — Billion-Record Shuffle at Ecosystem Scale
