@@ -7,21 +7,21 @@ Estimated duration: 15 minutes
 
 ## Slide 1 — Title
 
-Hi everyone, we're Group 9. Our project is called OSS Pulse, and we're investigating how coding agents have reshaped open-source development. We tracked 1.46 billion GitHub events from 2022 to 2026 to answer this question.
+Hi everyone, we're Group 9. Our project is called OSS Pulse. We're studying how coding agents reshaped open-source development — using 1.46 billion GitHub events over five years.
 
 ---
 
 ## Slide 2 — Abstract & Platform
 
-Let me start with the conclusion. We found that the coding agent era brought three fundamental shifts.
+Here's our conclusion upfront. We found three shifts in the coding agent era.
 
-First, development got lighter — developers grew by 51%, but contributors per repo dropped by 42%.
+First, development got lighter — more developers, but fewer contributors per repo.
 
-Second, weekends disappeared — weekend activity in 2026 reached the natural baseline of 28.9%, meaning GitHub can no longer tell what day of the week it is.
+Second, weekends disappeared — activity is now evenly spread across all days.
 
-Third, agent adoption happened in two phases — a 2025 explosion followed by 2026 normalization.
+Third, agent adoption had two phases — explosion in 2025, then normalization in 2026.
 
-We ran this on Apache Spark on NYU's Google Cloud Dataproc cluster. We processed 930 GB of raw data, cleaned it down to 87.9 GB, and ran 10 analytics jobs.
+We ran everything on Spark, on NYU's Dataproc cluster. 930 GB raw, cleaned down to about 88 GB, across 10 analytics jobs.
 
 ---
 
@@ -29,105 +29,89 @@ We ran this on Apache Spark on NYU's Google Cloud Dataproc cluster. We processed
 
 Why does this matter? Because traditional metrics are misleading.
 
-Here's an example: DeepSeek-R1 ranks number two on GitHub by stars, but it has no PyPI library, and only 5 people actually push code to the repo. Stars don't equal ecosystem health.
+DeepSeek-R1 is number two on GitHub by stars — but only 5 people actually push code. Stars don't equal health.
 
-And the timing is perfect. We have five Q1 snapshots spanning from the pre-ChatGPT baseline in 2022, through the ChatGPT explosion in 2023, the LLM bloom in 2024 with GPT-4, Claude, and Gemini, the year of agents in 2025 with Cursor, Claude Code, and Devin, to coding agent saturation in 2026.
+And the timing is right. We have five snapshots: pre-ChatGPT in 2022, all the way to coding agent saturation in 2026. You can see the timeline at the bottom.
 
 ---
 
 ## Slide 4 — Goodness
 
-On data quality. Our four core fields — event type, date, actor login, and repo name — have zero nulls across all five eras.
+Data quality. Zero nulls in our four core fields across all five eras.
 
-For 2026 specifically, we did an extra re-validation: we re-downloaded all 2,160 raw files, re-cleaned them, and compared against our original output. The diff was less than 0.39%. We also tolerated 580 corrupt gzip files from April 2026 using Spark's ignoreCorruptFiles option.
+For 2026, we re-downloaded all raw files and re-cleaned them.
 
-Note that 2026 had a schema breaking change, which I'll cover in detail on Slide 9.
+One caveat: 2026 had a schema breaking change — I'll cover that on Slide 9.
 
 ---
 
 ## Slide 5 — Data Sources
 
-We used three data sources.
-
-First, GitHub Archive — hourly event logs covering Watch, Fork, Push, PR, and Issue events. Five Q1 snapshots totaling 1.46 billion events.
-
-Second, Hugging Face Hub — an April 2026 snapshot of 2.8 million public models.
-
-Third, PyPI via BigQuery — monthly download counts for 46 AI and ML libraries.
+Three data sources. GitHub Archive for event logs — 1.46 billion events. Hugging Face Hub for model metadata — 2.8 million models. And PyPI via BigQuery for download counts — 46 AI libraries.
 
 ---
 
 ## Slide 6 — Data Samples
 
-This slide shows the schema and sample rows for each data source. GitHub Archive was cleaned into a unified 10-column schema, Hugging Face Hub includes model ID, library name, downloads, and likes, and PyPI is simply project, month, and download count. Total cleaned size is 87.9 GB in Parquet format.
-
-(This slide can be covered quickly.)
+This shows sample rows and schemas for each source. You can see the fields we kept after cleaning. I'll move on quickly.
 
 ---
 
 ## Slide 7 — Design Diagram
 
-Here's our pipeline architecture. Three data sources feed into a Spark cleaning and deduplication layer with a unified schema, partitioned by event date. Downstream, we have five groups of jobs: Jobs 1 through 3 handle daily metrics, HF-GitHub joins, and health scores. Job 4 computes the top 1,000 repos across all of GitHub — that's the billion-record shuffle. Jobs 5 through 7 compare AI versus general repos, detect star hype, and analyze contributor health. Job 8 does the five-year cross-era comparison. And Jobs 9 and 10 do per-repo deep dives and development rhythm analysis.
+Pipeline architecture. Three sources feed into Spark for cleaning, then fan out into 10 analytics jobs — from health scores to era comparisons to development rhythm analysis.
 
 ---
 
 ## Slide 8 — Code Challenge: Jhe Chen Li
 
-First engineering challenge. Our HDFS quota was only 500 GB, but five years of Q1 raw data needed 700 GB. The solution was a rolling pipeline — download one year, clean it to Parquet which is 8x smaller, delete the raw files, then move to the next year. This kept us within 500 GB at all times.
+First challenge. We needed 700 GB but only had 500 GB quota. Solution: a rolling pipeline — download, clean, delete raw, repeat. Stays under quota the whole time.
 
-The second problem was that a 90 GB union of all five eras exceeded our 48 GB executor memory. YARN killed it after 1.5 hours. We switched to per-era processing — read one era at a time, compute metrics, write intermediate CSVs, then unpersist. This brought peak memory down to 15-23 GB, and made the job crash-safe and resumable. If YARN kills mid-job, completed eras are preserved.
+We switched to per-era processing — compute one era at a time, save intermediates, release memory. Crash-safe.
 
 ---
 
 ## Slide 9 — Code Challenge: 2026 Schema Change
 
-The second challenge was more insidious. Job 8 reported merged PRs equals zero for 2026 Q1. At first we thought it was a bug.
+Second challenge. Job 8 reported zero merged PRs for 2026. We thought it was a bug.
 
-We downloaded raw JSON from both 2025 and 2026 and compared the payload keys directly. It turned out GitHub simplified their API schema in October 2025. The pr.merged field went from true/false to NULL. Instead, payload.action gained a new "merged" value. The push_distinct_size and commits fields were removed entirely.
+Turns out GitHub changed their API schema in late 2025. The merged field became NULL, replaced by a new action value. You can see the diff in the table.
 
-The fix was a backward-compatible OR clause — for the old schema, check action equals "closed" AND pr_merged equals true; for the new schema, check action equals "merged". We validated by re-downloading all 2,160 raw files, re-cleaning, and confirming the diff was less than 0.39%.
+We wrote a backward-compatible fix — an OR clause that handles both old and new schemas. Then we re-validated everything
 
 ---
 
 ## Slide 10 — Code Challenge: Bo Yu
 
-Third challenge: billion-record shuffle. Computing the top 1,000 repos across one billion events required grouping by repo name across 334 date partitions. That's an 83 GB shuffle that took over three hours.
+Third challenge: billion-record shuffle. Grouping by repo across a billion events produced an 83 GB shuffle. Over three hours.
 
-We optimized by tuning shuffle partitions from 400 down to 200 to match our cluster, caching aggregated DataFrames to avoid redundant shuffles, replacing Python UDFs with native Spark functions, and restructuring downstream jobs to read pre-aggregated output.
-
-If we did it again, we'd bucket the cleaned data by repo name at ingest time. That would eliminate the 83 GB shuffle entirely — hours down to minutes.
+We tuned partitions, cached DataFrames, and replaced Python UDFs with native Spark functions. If we did it again, we'd bucket by repo name at ingest — that eliminates the shuffle entirely.
 
 ---
 
 ## Slide 11 — Stars ≠ Health
 
-Now let's get into findings. First, a background observation: stars do not equal health.
+Now, findings. First, a background observation: stars don't equal health.
 
-This bubble chart plots PyPI downloads on the x-axis, GitHub stars on the y-axis, and bubble size represents HF model count.
+Three archetypes here. Transformers wins on all signals. Sentence-transformers has very few stars but massive downloads. And Ollama has tons of stars and PyPI downloads but almost nothing on HF — because it uses its own model registry.
 
-We see three archetypes. Transformers is the true leader — it wins on all three signals. Sentence-transformers has only 1,600 stars but 519 million HF downloads — that's 327,014 downloads per star, a quiet powerhouse. And Ollama has 44,500 stars plus 47.9 million PyPI downloads but only 241 HF downloads — because it's a runtime with its own model registry, not part of the HF ecosystem.
-
-The point: no single signal captures every project. Triangulation is essential.
+No single metric works for every project. You need triangulation.
 
 ---
 
 ## Slide 12 — Event Composition
 
-Next, let's look at how event composition changed over five years. This stacked bar chart shows the breakdown by event type for each era.
+Five-year event composition. The key point: 2026 total events dropped about 30% from the 2025 peak — but it was mainly GitHub removing inauthentic accounts.
 
-The key observation: 2026 total events fell 29% from the 2025 peak, but this was primarily driven by GitHub's removal of inauthentic accounts. Popularity signals were hit hardest — Watch events, which represent stars, collapsed by 63%, and Forks collapsed by 67%. Meanwhile, Push's share of total events actually grew from 71% to 85%.
-
-In other words, engineering activity was least affected. What got cleaned out was the click-a-button behavior — starring and forking.
+Popularity signals got hit hardest — stars down 63%, forks down 67%. But push's share of all events actually grew from 71% to 85%. Engineering activity was least affected.
 
 ---
 
 ## Slide 13 — Paper Reference
 
-Why are we confident this was an account cleanup? Because we have external corroboration.
+Why are we confident this was an account cleanup? This arXiv paper found about 6 million fake stars on GitHub. 90% of flagged repos were later deleted.
 
-This late-2024 arXiv paper identified approximately 6 million suspected fake stars on GitHub. 90% of flagged repositories were later observed to be deleted, at 16 times the normal deletion rate.
-
-Our 2026 WatchEvent and ForkEvent collapse aligns directly with their observations. We chose to be transparent about this anomaly — we report observations, not an official GitHub announcement.
+Our 2026 data aligns directly with their findings.
 
 ---
 
@@ -135,76 +119,72 @@ Our 2026 WatchEvent and ForkEvent collapse aligns directly with their observatio
 
 This is our core finding.
 
-Over five years, developers grew from 7.0 million to 10.6 million — a 51% increase. But total events peaked at 376 million in 2025 and fell back to 266 million in 2026.
+Developers grew over 50%. But total events peaked in 2025 and dropped in 2026. And contributors per repo fell over 40%.
 
-More importantly, average contributors per repo dropped from 4.88 to 2.84 — a 42% decline. More people are developing, but each project has fewer contributors. Development is getting "lighter" — more people, smaller commits, less deep participation.
+More people developing, but each project gets less attention. Development is getting lighter.
 
 ---
 
 ## Slide 15 — Bus Factor
 
-We also analyzed contributor concentration. This chart shows the top-1 push ratio for selected repos — the share of all pushes made by the single largest contributor.
+Contributor concentration. This chart shows how much the top contributor dominates each repo.
 
-Red means high risk: open-webui's top-1 ratio is 0.957, and awesome-list repos are similar. But here's the nuance — concentration doesn't automatically prove fragility. Tensorflow's ratio is 0.99, but that's a CI bot, not a human. You need to read this together with PR contributor counts to get the real picture.
+Red means high concentration. But concentration alone doesn't prove fragility — tensorflow's top pusher is a CI bot, not a human. You need to check PR contributors too.
 
 ---
 
 ## Slide 16 — Bus Factor Evidence
 
-To prove this point, we took screenshots directly from GitHub's contributor insights page.
+Here's proof from GitHub's own contributor page.
 
-On the left, open-webui: tjbck made 11,683 commits, versus 479 for the number two contributor — a 24x gap. This is genuine bus-factor risk. If this one person leaves, the project could stall.
+Left: open-webui — one person made 24 times more commits than the second contributor. Real bus-factor risk.
 
-On the right, tensorflow: the top contributor tensorflower-gardener has 57,761 commits, but it's a CI bot. The concentration looks extreme, but it's automation, not human dependency.
-
-Same numbers, completely different stories.
+Right: tensorflow — the top contributor is a CI bot. Same high concentration, completely different story.
 
 ---
 
 ## Slide 17 — Weekend Gap Disappeared
 
-This is my favorite finding. We calculated the weekend share of events for each era. Q1 has roughly 90 days, 26 of which are weekends, giving a natural ratio of 28.9%.
+My favorite finding. Weekend activity should naturally be about 29% of total. In 2022, it was 26% — humans rest on weekends. By 2026, it reached nearly 30% — the gap is gone.
 
-In 2022, weekend activity was 25.8% — 3.1 percentage points below natural, because humans rest on weekends. In 2023, it was even lower at 23.8%. Then it climbed year over year, reaching 29.7% in 2026 — for the first time exceeding the natural baseline.
-
-The push-specific weekend ratio rose from 24.8% to 29.4% — and pushes represent actually writing code, so this is the strongest signal. In 2026, GitHub doesn't know what day of the week it is anymore. Coding agents work 24/7.
+Push-specific weekend ratio shows the same trend. In 2026, GitHub can't tell what day it is anymore. Agents work around the clock.
 
 ---
 
 ## Slide 18 — Two Phases of the Agent Era
 
-The final finding, and the climax of our story. The agent era has two distinct phases.
+Final finding. The agent era has two phases.
 
-2025 was the explosion: accounts pushing more than 50 times per day surged from 6,197 to 12,743 — more than doubling. These were early agent adopters pushing code at superhuman rates.
+2025 was the explosion — high-frequency push accounts more than doubled. Early adopters running agents at superhuman speed.
 
-But by 2026, those high-frequency accounts dropped back to 6,575 — because GitHub cleaned up bot accounts. At the same time, total push actors grew from 6.95 million to 8.71 million, a 25% increase. The bot peak is over; what replaced it is broader but lighter participation.
+2026 was the normalization — those high-frequency accounts dropped back as GitHub cleaned up bots. But total push actors kept growing. More people pushing, each one pushing less.
 
-More people are pushing, but each person pushes less. That's the signature of the coding agent era.
+That's the signature of the coding agent era.
 
 ---
 
 ## Slide 19 — Lessons Learned
 
-Three lessons learned.
+Three lessons.
 
-First, design for the constraint, not against it. The HDFS quota and cross-team permission boundaries forced design decisions that ended up improving our work. The rolling pipeline and per-era processing were more crash-safe than a quota-free design would have been.
+First, design for the constraint. The quota limitation forced a rolling pipeline that ended up being more crash-safe.
 
-Second, never trust a live API schema — assert it. The 2026 GitHub schema change wasn't loudly announced. Job 8 silently produced merged PRs equals zero for an entire era before we caught it. Going forward, always assert column counts, null ratios, and key value ranges explicitly.
+Second, never trust a live API schema. The 2026 change silently broke our query — always assert your assumptions.
 
-Third, validate the unexpected with outside sources. When the 2026 WatchEvent and ForkEvent collapse looked like a bug, cross-checking with the arXiv paper confirmed it as real platform behavior. Anomalies need external corroboration.
+Third, validate anomalies with outside sources. The arXiv paper confirmed our 2026 data wasn't a bug.
 
 ---
 
 ## Slide 20 — Summary & Acknowledgements
 
-To wrap up. The coding agent era brought three fundamental shifts to open-source development.
+Three takeaways.
 
-First, development got lighter — 51% more developers, but 42% fewer contributors per repo. Single-commit pushes rose from 87% to 94%.
+Development got lighter — more developers, fewer contributors per repo.
 
-Second, weekends disappeared — 2026 weekend activity hit 29.7%, reaching the natural baseline. Coding agents work around the clock.
+Weekends disappeared — agents work 24/7.
 
-Third, two-phase adoption — 2025 explosion with automated pushers more than doubling, followed by 2026 normalization with broader but lighter participation.
+Two-phase adoption — 2025 explosion, 2026 normalization.
 
-The implication is clear: traditional metrics like stars and fork counts are increasingly unreliable in the agent era. Multi-dimensional measurement is essential.
+Traditional metrics like stars are increasingly unreliable. Multi-dimensional measurement is essential.
 
-Thank you to NYU HPC for the Dataproc cluster, and to GitHub Archive, Hugging Face Hub, and PyPI for the public data that made this analysis possible. Thank you.
+Thanks to NYU HPC, GitHub Archive, Hugging Face, and PyPI. Thank you.
