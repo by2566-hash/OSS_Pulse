@@ -1,0 +1,35 @@
+\begin{thebibliography}{4}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Avelino et~al.(2016)Avelino, Passos, Hora, and Valente]{avelino2016}
+Guilherme Avelino, Leonardo Passos, Andre Hora, and Marco~Tulio Valente.
+\newblock A novel approach for estimating truck factors.
+\newblock In \emph{Proceedings of the 24th International Conference on Program
+  Comprehension (ICPC)}, pages 1--10. IEEE, 2016.
+
+\bibitem[Coelho and Valente(2017)]{coelho2017}
+Jailton Coelho and Marco~Tulio Valente.
+\newblock Why modern open source projects fail.
+\newblock In \emph{Proceedings of the 2017 11th Joint Meeting on Foundations of
+  Software Engineering (ESEC/FSE)}, pages 186--196. ACM, 2017.
+
+\bibitem[Daoudi et~al.(2024)Daoudi, Cogo, Adams, and Khomh]{daoudi2024}
+Noureldin Daoudi, Filipe~R. Cogo, Bram Adams, and Foutse Khomh.
+\newblock Unveiling fake stars: A study of star inflation in open-source
+  software.
+\newblock In \emph{Proceedings of the 46th International Conference on Software
+  Engineering (ICSE)}, pages 1--12, 2024.
+\newblock Found $\sim$6 million fake stars on GitHub; 90\% of flagged repos
+  later deleted.
+
+\bibitem[Fan et~al.(2023)]{fan2023}
+Angela Fan et~al.
+\newblock Large language models for software engineering: Survey and open
+  problems.
+\newblock \emph{arXiv preprint arXiv:2310.03533}, 2023.
+
+\end{thebibliography}
