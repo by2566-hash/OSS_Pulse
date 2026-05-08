@@ -1,9 +1,21 @@
-\begin{thebibliography}{4}
+\begin{thebibliography}{9}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{Anthropic}(2024)]{claudecode}
+{Anthropic}.
+\newblock Claude {C}ode: Agentic coding in the terminal.
+\newblock \url{https://www.anthropic.com/claude-code}, 2024.
+\newblock Accessed May 2026.
+
+\bibitem[{Anysphere}(2024)]{cursor}
+{Anysphere}.
+\newblock Cursor: The {AI} code editor.
+\newblock \url{https://cursor.com/}, 2024.
+\newblock Accessed May 2026.
 
 \bibitem[Avelino et~al.(2016)Avelino, Passos, Hora, and Valente]{avelino2016}
 Guilherme Avelino, Leonardo Passos, Andre Hora, and Marco~Tulio Valente.
@@ -11,25 +23,51 @@ Guilherme Avelino, Leonardo Passos, Andre Hora, and Marco~Tulio Valente.
 \newblock In \emph{Proceedings of the 24th International Conference on Program
   Comprehension (ICPC)}, pages 1--10. IEEE, 2016.
 
+\bibitem[{CHAOSS Project}(2024)]{chaoss}
+{CHAOSS Project}.
+\newblock Community health analytics for open source software ({CHAOSS}):
+  Metrics models.
+\newblock \url{https://chaoss.community/}, 2024.
+\newblock Accessed May 2026.
+
 \bibitem[Coelho and Valente(2017)]{coelho2017}
 Jailton Coelho and Marco~Tulio Valente.
 \newblock Why modern open source projects fail.
 \newblock In \emph{Proceedings of the 2017 11th Joint Meeting on Foundations of
   Software Engineering (ESEC/FSE)}, pages 186--196. ACM, 2017.
 
-\bibitem[Daoudi et~al.(2024)Daoudi, Cogo, Adams, and Khomh]{daoudi2024}
-Noureldin Daoudi, Filipe~R. Cogo, Bram Adams, and Foutse Khomh.
-\newblock Unveiling fake stars: A study of star inflation in open-source
-  software.
-\newblock In \emph{Proceedings of the 46th International Conference on Software
-  Engineering (ICSE)}, pages 1--12, 2024.
-\newblock Found $\sim$6 million fake stars on GitHub; 90\% of flagged repos
-  later deleted.
+\bibitem[{Cognition AI}(2024)]{devin}
+{Cognition AI}.
+\newblock {Devin}: An {AI} software engineer.
+\newblock \url{https://www.cognition.ai/blog/introducing-devin}, 2024.
+\newblock Accessed May 2026.
 
-\bibitem[Fan et~al.(2023)]{fan2023}
-Angela Fan et~al.
+\bibitem[Fan et~al.(2023)Fan, Gokkaya, Harman, Lyubarskiy, Sengupta, Yoo, and
+  Zhang]{fan2023}
+Angela Fan, Beliz Gokkaya, Mark Harman, Mitya Lyubarskiy, Shubho Sengupta, Shin
+  Yoo, and Jie~M. Zhang.
 \newblock Large language models for software engineering: Survey and open
   problems.
 \newblock \emph{arXiv preprint arXiv:2310.03533}, 2023.
+
+\bibitem[{GitHub}(2025)]{ghchangelog2025}
+{GitHub}.
+\newblock {GitHub} {REST}/{Webhook} events: 2025 schema updates ({\tt
+  pullrequestevent.action = "merged"}; {\tt push.distinct\_size} removal).
+\newblock GitHub Changelog, 2025.
+\newblock Observed schema change between 2025 and 2026 hourly payloads;
+  \url{https://github.blog/changelog/}.
+
+\bibitem[He et~al.(2026)He, Yang, Burckhardt, Kapravelos, Vasilescu, and
+  K{\"a}stner]{he2024fakestars}
+Hao He, Haoqin Yang, Philipp Burckhardt, Alexandros Kapravelos, Bogdan
+  Vasilescu, and Christian K{\"a}stner.
+\newblock Six million (suspected) fake stars in {GitHub}: A growing spiral of
+  popularity contests, spams, and malware.
+\newblock In \emph{Proceedings of the 47th International Conference on Software
+  Engineering (ICSE)}, 2026.
+\newblock arXiv:2412.13459. Identifies $\sim$6\,M suspected fake stars
+  (2019--2024); large fraction of flagged repositories were subsequently
+  removed by GitHub.
 
 \end{thebibliography}

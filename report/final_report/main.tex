@@ -18,6 +18,8 @@
 \usepackage{adjustbox}
 \usepackage[numbers]{natbib}
 \usepackage{dblfloatfix} % fix float placement in twocolumn
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
 
 \lstset{
   basicstyle=\ttfamily\scriptsize,
@@ -58,7 +60,7 @@
 \begin{abstract}
 We present \textbf{OSS Pulse}, a large-scale empirical study of open-source software ecosystem health across the 2022--2026 coding agent era.
 By combining 1.46~billion GitHub Archive events (five quarterly snapshots), 2.8~million Hugging Face Hub model records, and PyPI download statistics for 46 AI/ML libraries, we construct a multi-dimensional health framework that goes beyond traditional star-based metrics.
-Our analysis reveals three fundamental shifts: (1)~development became \emph{lighter}---51\% more developers but 42\% fewer contributors per repository; (2)~the weekend activity gap disappeared as automated agents operate around the clock; and (3)~agent adoption followed a two-phase pattern---explosive growth in 2025 followed by normalization in 2026.
+Our analysis reveals three structural shifts: (1)~development became \emph{lighter}---51\% more developers but 42\% fewer contributors per repository; (2)~the weekend activity gap closed---weekend share rose from 25.8\% to 29.7\%, consistent with (though not proof of) round-the-clock automation; and (3)~high-frequency push activity exhibited a two-phase pattern---explosive growth in 2025 followed by normalization in 2026, plausibly tracking but not equivalent to coding-agent adoption.
 We processed 930+~GB of raw data into 87.9~GB of cleaned Parquet files through 10 Spark analytics jobs on a Google Cloud Dataproc cluster.
 \end{abstract}
 
@@ -66,8 +68,8 @@ We processed 930+~GB of raw data into 87.9~GB of cleaned Parquet files through 1
 \section{Introduction}\label{sec:intro}
 
 GitHub stars have long served as a proxy for open-source project health.
-However, in the era of coding agents---tools such as Cursor, Claude Code, and Devin that automate large portions of the software development workflow---this proxy is breaking down.
-DeepSeek-R1, for instance, ranks second on GitHub by stars with over 93,000 watchers, yet only 5 people actually push code to the repository.
+However, in the era of coding agents---tools such as Cursor~\cite{cursor}, Claude Code~\cite{claudecode}, and Devin~\cite{devin} that automate large portions of the software development workflow---this proxy is breaking down.
+DeepSeek-R1, for instance, is among GitHub's most-starred repositories with over 93,000 watchers, yet only 5 distinct accounts pushed code to it during 2026-Q1.
 
 The period from 2022 to 2026 spans a remarkable transformation in software development: from the pre-ChatGPT baseline (2022), through the LLM explosion (2023--2024), into the agent era (2025--2026).
 We hypothesize that coding agents are fundamentally altering open-source contribution patterns, and that traditional metrics fail to capture these changes.
@@ -91,15 +93,16 @@ We hypothesize that coding agents are fundamentally altering open-source contrib
 \section{Related Work}\label{sec:related}
 
 \textbf{OSS health metrics.}
-Prior work has studied project health through contributor diversity~\cite{coelho2017}, bus factor analysis~\cite{avelino2016}, and community engagement metrics.
-The CHAOSS project defines standardized community health indicators, but most studies predate the agent era.
+Coelho and Valente~\cite{coelho2017} characterized failure modes of modern OSS projects through commit and contributor decay; Avelino et al.~\cite{avelino2016} formalized the \emph{truck factor} as a commit-based concentration measure.
+We extend the same intuition from commits to PR-level diversity, and complement it with cross-platform demand signals (Hugging Face, PyPI).
+The CHAOSS project~\cite{chaoss} maintains a catalogue of standardized community-health indicators, but most published indicator studies predate the agent era.
 
 \textbf{GitHub star inflation.}
-Daoudi et al.~\cite{daoudi2024} identified approximately 6~million fake stars on GitHub, with 90\% of flagged repositories subsequently deleted.
-Our 2026 data---showing a 63\% drop in WatchEvents---aligns with this large-scale cleanup.
+He et al.~\cite{he2024fakestars} identified approximately 6~million suspected fake stars on GitHub between 2019 and 2024, with a substantial fraction of the flagged repositories subsequently removed.
+Our 2026-Q1 observation---a 63\% year-over-year drop in WatchEvents---is \emph{consistent with} the tail of this clean-up, although the magnitude of the drop suggests additional factors (\S\ref{sec:findings}).
 
 \textbf{AI-assisted development.}
-Recent surveys document the rise of coding agents~\cite{fan2023}, but empirical, large-scale analyses of their ecosystem-wide effects remain scarce.
+Recent surveys document the rise of LLM-driven coding tools and agents~\cite{fan2023}, but empirical, ecosystem-wide quantitative analyses of their behavioral fingerprint on public-repository activity remain scarce.
 Our work fills this gap by quantifying behavioral shifts across 1.46B events.
 
 % ══════════════════════════════════════════════════════════
@@ -136,7 +139,7 @@ Five event types are retained: \texttt{PushEvent}, \texttt{PullRequestEvent}, \t
 
 We captured a snapshot of the Hugging Face Hub in April 2026, comprising 2,815,064 model records.
 Key fields include \texttt{modelId}, \texttt{pipeline\_tag}, \texttt{library\_name}, \texttt{downloads} (30-day), \texttt{likes}, and \texttt{parameter\_count}.
-The data was ingested via the \texttt{huggingface\_hub} Python API and processed through a Scala Spark pipeline.
+The data was ingested via the \texttt{huggingface\_hub} Python API and processed through the same PySpark pipeline used for GH Archive.
 
 \subsection{PyPI Download Statistics}
 
@@ -151,7 +154,7 @@ We curated 93 AI/ML repositories spanning 14 categories (frameworks, LLM serving
 
 \subsection{System Overview}
 
-The pipeline runs on NYU's Google Cloud Dataproc cluster (4 worker nodes, n1-standard-16; master n1-standard-32; 219~GB YARN memory, 64 vCores).
+The pipeline runs on NYU's Google Cloud Dataproc cluster.
 All data is stored in HDFS as Parquet files partitioned by \texttt{event\_date}.
 
 The architecture follows a three-stage design (Figure~\ref{fig:pipeline}):
@@ -165,27 +168,32 @@ Total data reduction: 930+~GB raw $\rightarrow$ 87.9~GB cleaned (90.5\%).
 
 \begin{figure}[t]
 \centering
-\setlength{\unitlength}{0.9\columnwidth}
-\begin{picture}(1,0.72)
-  % Sources
-  \put(0.02,0.62){\framebox(0.28,0.08){\scriptsize GH Archive}}
-  \put(0.36,0.62){\framebox(0.28,0.08){\scriptsize HF Hub API}}
-  \put(0.70,0.62){\framebox(0.28,0.08){\scriptsize PyPI Stats}}
-  % Arrows down
-  \put(0.16,0.62){\vector(0,-1){0.06}}
-  \put(0.50,0.62){\vector(0,-1){0.06}}
-  \put(0.84,0.62){\vector(0,-1){0.06}}
-  % Clean stage
-  \put(0.05,0.48){\framebox(0.90,0.08){\scriptsize Spark: Clean \& Deduplicate (5 event types, partitioned)}}
-  % Arrow
-  \put(0.50,0.48){\vector(0,-1){0.06}}
-  % Analytics
-  \put(0.05,0.34){\framebox(0.90,0.08){\scriptsize 10 Analytics Jobs (Health Score $\mid$ Era Comparison $\mid$ Dev Rhythm $\mid$ \ldots)}}
-  % Arrow
-  \put(0.50,0.34){\vector(0,-1){0.06}}
-  % Output
-  \put(0.15,0.20){\framebox(0.70,0.08){\scriptsize CSV Outputs $\rightarrow$ Visualization $\rightarrow$ Findings}}
-\end{picture}
+\begin{tikzpicture}[
+  font=\scriptsize,
+  src/.style    = {draw, rectangle, align=center, inner sep=2pt,
+                   minimum height=4.5mm, minimum width=20mm},
+  stage/.style  = {draw, rectangle, align=center, inner sep=3pt,
+                   text width=0.82\columnwidth},
+  arr/.style    = {-{Latex[length=1.2mm,width=1mm]},
+                   shorten >=1pt, shorten <=1pt}
+]
+% Source row
+\node[src] (gh) at (-0.30\columnwidth, 0) {GH Archive};
+\node[src] (hf) at (0, 0)                  {HF Hub API};
+\node[src] (py) at ( 0.30\columnwidth, 0) {PyPI Stats};
+
+% Pipeline stages
+\node[stage] (clean) at (0, -8mm)  {Spark: Clean \& Deduplicate (5 event types, partitioned)};
+\node[stage] (jobs)  at (0, -18mm) {10 Analytics Jobs (Health Score, Era Comparison, Dev Rhythm, \ldots)};
+\node[stage] (out)   at (0, -28mm) {CSV Outputs $\rightarrow$ Visualization $\rightarrow$ Findings};
+
+% Arrows
+\draw[arr] (gh.south) -- (gh.south  |- clean.north);
+\draw[arr] (hf.south) -- (hf.south  |- clean.north);
+\draw[arr] (py.south) -- (py.south  |- clean.north);
+\draw[arr] (clean.south) -- (jobs.north);
+\draw[arr] (jobs.south)  -- (out.north);
+\end{tikzpicture}
 \caption{Pipeline architecture: three data sources feed into Spark cleaning, then fan out to 10 analytics jobs.}\label{fig:pipeline}
 \end{figure}
 
@@ -244,7 +252,7 @@ Processing five years of Q1 data required ${\sim}$700~GB of raw storage, but the
 \subsection{2026 Schema Breaking Change}
 
 Job~08 initially reported zero merged PRs for 2026-Q1.
-Investigation revealed that GitHub changed its API payload schema in late 2025: the \texttt{pr.merged} field became permanently \texttt{NULL}, replaced by a new \texttt{payload.action\,=\,"merged"} value (Table~\ref{tab:schema-change}).
+Investigation revealed that GitHub's REST/Webhook event payloads changed between 2025 and 2026~\cite{ghchangelog2025}: the \texttt{pr.merged} field became permanently \texttt{NULL}, replaced by a new \texttt{payload.action\,=\,"merged"} value, and the \texttt{push.distinct\_size} field was removed from \texttt{PushEvent} payloads (Table~\ref{tab:schema-change}). The latter prevents us from computing 1-commit-push ratios and average commit-size statistics for 2026-Q1.
 
 \begin{table}[t]
 \centering\small
@@ -255,7 +263,7 @@ Investigation revealed that GitHub changed its API payload schema in late 2025: 
 \midrule
 \texttt{pr.merged}  & true/false & NULL \\
 \texttt{action}     & open/close & + ``merged'' \\
-\texttt{distinct\_size} & present & removed \\
+\texttt{push.distinct\_size} & present & removed \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -284,37 +292,46 @@ Figure~\ref{fig:era-shift} visualizes the ecosystem evolution; Table~\ref{tab:er
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{03_era_shift.png}
+\includegraphics[width=\columnwidth]{03_era_shift.pdf}
 \caption{Five-year ecosystem shift across 2022--2026 Q1 snapshots. Developers grew 51\% while contributors per repo fell 42\%.}\label{fig:era-shift}
 \end{figure}
 
 \begin{table}[t]
 \centering\small
-\caption{Ecosystem evolution: 2022 vs.\ 2026 Q1.}\label{tab:era-shift}
+\caption{Ecosystem evolution: 2022 vs.\ 2026 Q1.
+$^{\dagger}$1-commit push \% reports the latest era for which
+\texttt{push.distinct\_size} is available (2025), since GitHub
+removed this field in 2026 (\S\ref{sec:challenges}).}\label{tab:era-shift}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
 \textbf{Metric} & \textbf{2022} & \textbf{2026} & \textbf{$\Delta$} \\
 \midrule
 Developers        & 7.0M  & 10.6M & +51\% \\
 Total events      & 207M  & 266M  & +29\% \\
-1-commit push \%  & 87\%  & 94\%  & +7pp \\
-PR/push ratio     & 0.098 & 0.077 & $-$21\% \\
+1-commit push \%$^{\dagger}$ & 87\%  & 94\% (2025) & +7pp \\
+PR/push ratio     & 0.098 & 0.082 & $-$16\% \\
 Contrib./repo     & 4.88  & 2.84  & $-$42\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 More developers are participating, but each repo receives fewer contributors.
-Pushes are smaller and more frequent, while the PR/push ratio declined 21\%---less ceremony, more direct pushes.
+Pushes are smaller and more frequent, while the PR/push ratio declined 16\%---less ceremony, more direct pushes.
 
 \textbf{The 2026 event drop.}
 Total events declined 29\% from 2025 to 2026.
-This drop is concentrated in popularity signals: WatchEvents $-$63\%, ForkEvents $-$67\%, consistent with GitHub's removal of ${\sim}$6M fake star accounts~\cite{daoudi2024}.
-PushEvent's share grew from 71\% to 85\%---engineering activity was least affected.
+The drop is concentrated in popularity signals (WatchEvents $-$63\%, ForkEvents $-$67\%) rather than in engineering activity (PushEvents $-$28\%).
+\emph{PushEvent's share rose from 83\% in 2025 to 85\% in 2026 (versus 71\% in 2022).}
+This pattern is consistent with the tail of GitHub's clean-up of suspected fake-star accounts reported by~\cite{he2024fakestars}, but several alternative or complementary explanations cannot be ruled out:
+(i) the magnitude of the WatchEvent drop ($-$12.4M in a single quarter) exceeds what a one-time removal of $\sim$6M cumulative fake stars (2019--2024) can account for;
+(ii) the 67\% ForkEvent decline is unlikely to be driven by fake-star clean-up, since forks are not the focus of that work;
+(iii) the GitHub event-payload schema change of late 2025 (\S\ref{sec:challenges}) altered how some interactions are emitted; and
+(iv) 580 corrupt hourly archives in 2026-Q1 were skipped via Spark's \texttt{ignoreCorruptFiles}, with an estimated cleaning-stage delta of $\le$0.39\% relative to a re-download (\S\ref{sec:quality}).
+We therefore present this drop as an empirical observation rather than as evidence of any single cause.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{07_event_distribution.png}
+\includegraphics[width=\columnwidth]{07_event_distribution.pdf}
 \caption{Event type composition across five eras. Push dominance grows as popularity signals (Watch, Fork) decline sharply in 2026.}\label{fig:event-dist}
 \end{figure}
 
@@ -326,8 +343,8 @@ Figure~\ref{fig:weekend} shows this gap vanishing by 2026.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{04_weekend_gap.png}
-\caption{Weekend event share across five eras. By 2026, weekend activity exceeds the 28.9\% natural baseline---agents work 24/7.}\label{fig:weekend}
+\includegraphics[width=\columnwidth]{04_weekend_gap.pdf}
+\caption{Weekend event share across five eras. By 2026, weekend activity exceeds the 28.9\% natural baseline---a pattern compatible with round-the-clock automation, though human-side factors (globalization, on-call pressure) cannot be excluded.}\label{fig:weekend}
 \end{figure}
 
 \begin{table}[t]
@@ -346,23 +363,17 @@ Figure~\ref{fig:weekend} shows this gap vanishing by 2026.
 \end{tabular}
 \end{table}
 
-Push-specific weekend ratio: 24.8\% (2022) $\rightarrow$ 29.4\% (2026).
-By 2026, GitHub activity shows no weekly periodicity---consistent with agents operating around the clock.
+The closure is driven primarily by \texttt{PushEvent}, whose weekend ratio rose monotonically from 24.8\% (2022) to 29.4\% (2026). The \texttt{PullRequestEvent} weekend ratio is U-shaped over the same period (31.6\% $\rightarrow$ 18.4\% $\rightarrow$ 29.5\%), reflecting volatile bot-driven activity (Dependabot/Renovate \texttt{synchronize} events) rather than a uniform secular trend; we therefore anchor this finding on Push.
+By 2026, push activity shows essentially no weekly periodicity. This is \emph{consistent with} (but not proof of) automated agents operating around the clock; alternative drivers---broader geographic participation, increased CI/CD automation, and weekend on-call work---would yield a similar signature and cannot be separated without actor-level labels.
+
+\subsection{Finding 3: Two Phases of High-Frequency Push Activity}
+
+We track \emph{high-frequency push accounts} ($>$1{,}000 pushes per quarter, or $>$50 pushes per day on the busiest day) as a proxy for automation-assisted activity. We caution that this cohort plausibly mixes coding agents, CI/build bots (e.g., the top pusher on \texttt{tensorflow/tensorflow} is a CI bot, see \S\ref{sec:stars}), scrapers, and a small number of human power users; the proxy therefore over-counts true agent adopters. With that caveat, the cohort exhibits a distinctive two-phase pattern (Figure~\ref{fig:agent-phases}, Table~\ref{tab:agent-phases}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{06_weekend_by_type.png}
-\caption{Weekend activity ratio by event type. Push weekend ratio converges to the natural baseline by 2026.}\label{fig:weekend-type}
-\end{figure}
-
-\subsection{Finding 3: Two Phases of Agent Adoption}
-
-The agent era exhibits a distinctive two-phase pattern (Figure~\ref{fig:agent-phases}, Table~\ref{tab:agent-phases}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{05_agent_phases.png}
-\caption{Two phases of agent adoption: 2025 explosion (high-frequency pushers tripled) followed by 2026 normalization.}\label{fig:agent-phases}
+\includegraphics[width=\columnwidth]{05_agent_phases.pdf}
+\caption{Two phases of high-frequency push activity: 2025 explosion (the $>$1K-pushes cohort nearly doubled) followed by 2026 normalization.}\label{fig:agent-phases}
 \end{figure}
 
 \begin{table}[t]
@@ -382,42 +393,41 @@ Median pushes     & 6     & 6     & 4 \\
 \end{table}
 
 \textbf{Phase 1---Explosion (2025):}
-High-frequency push accounts nearly doubled ($>$1K pushes: 5,347$\rightarrow$9,788).
-Early adopters ran coding agents at superhuman rates.
+The $>$1K-pushes cohort nearly doubled (5{,}347$\rightarrow$9{,}788) and the $>$50-pushes-per-day cohort more than doubled. This is the kind of footprint expected from early automation adopters running coding agents and bots at superhuman rates, although individual-level confirmation is not possible from public event metadata alone.
 
 \textbf{Phase 2---Normalization (2026):}
-High-frequency accounts dropped $-$35\% as GitHub cleaned bots, while total push actors grew to 8.71M (+25\%).
-Average pushes/actor fell 43\%.
-The signature: \emph{more people push, but each pushes less.}
+The high-frequency cohort dropped $-$35\%---a movement plausibly driven by GitHub's tightening of automation policies and bot clean-up---while total push actors grew to 8.71M (+25\%) and average pushes/actor fell 43\%.
+The aggregate signature: \emph{more people push, but each pushes less.}
 
 \subsection{Finding 4: Stars $\neq$ Health}\label{sec:stars}
 
-Our composite health score reveals that star counts are poor predictors of project health:
-\begin{equation}\label{eq:health}
-\resizebox{0.88\columnwidth}{!}{$
-H = 0.3 S_{\text{HF}} + 0.2 S_{\text{PyPI}} + 0.15 S_{\star} + 0.15 S_{\text{push}} + 0.1 S_{\text{PR}} + 0.1 S_{\text{days}}
-$}
-\end{equation}
-where each $S$ is a min--max normalized score.
+Our composite health score reveals that star counts are weak predictors of project health:
+\begin{align}\label{eq:health}
+H = \;& 0.30\,S_{\text{HF}} + 0.20\,S_{\text{PyPI}} + 0.15\,S_{\star} \notag\\
+      &+\; 0.15\,S_{\text{push}} + 0.10\,S_{\text{PR}} + 0.10\,S_{\text{days}}
+\end{align}
+where each $S$ is a min--max normalized score on the AI-repo subset.
+Across the 33 AI repos with complete metadata, the Spearman rank correlation between GitHub stars and $H$ is only $\rho = 0.46$ (Pearson $r = 0.24$); only 4 of the top-10-by-stars repos appear in the top-10-by-$H$. Stars and downstream usage diverge substantially.
 
 Figure~\ref{fig:stars-health} and Table~\ref{tab:archetypes} illustrate how three distinct archetypes emerge.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{01_stars_vs_health.png}
+\includegraphics[width=\columnwidth]{01_stars_vs_health.pdf}
 \caption{Stars vs.\ health score for AI repositories. High stars do not guarantee high health (e.g., Ollama).}\label{fig:stars-health}
 \end{figure}
 
 \begin{table}[t]
 \centering\scriptsize
+\setlength{\tabcolsep}{4pt}
 \caption{Three health archetypes.}\label{tab:archetypes}
 \begin{tabular}{@{}llrl@{}}
 \toprule
 \textbf{Archetype} & \textbf{Example} & \textbf{Stars} & \textbf{Usage Signal} \\
 \midrule
-True leader      & transformers   & 13K  & PyPI 938M, HF 835K \\
-Quiet power      & sent.-trans.   & 1.6K & HF 519M downloads \\
-Eco.\ outsider   & ollama         & 44.5K & PyPI 47.8M, HF 241 \\
+True leader      & transformers & 13K   & PyPI 938M, HF 835K \\
+Quiet power      & sent.-trans. & 1.6K  & HF 519M downloads \\
+Eco.\ outsider   & ollama       & 44.5K & PyPI 47.8M, HF 241 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -432,14 +442,8 @@ AI repos exhibit systematically higher contributor concentration (Figure~\ref{fi
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{02_contributor_risk.png}
+\includegraphics[width=\columnwidth]{02_contributor_risk.pdf}
 \caption{Contributor concentration across top repositories. Red indicates high bus-factor risk.}\label{fig:contributor-risk}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{01b_stars_vs_builders.png}
-\caption{Stars vs.\ actual push contributors. DeepSeek-R1: 93K watchers, 5 pushers.}\label{fig:stars-builders}
 \end{figure}
 
 Key examples:
@@ -449,8 +453,7 @@ Key examples:
   \item \textbf{pytorch}: top1\_push\_ratio = 0.14, 1,605 PR contributors---healthy distribution.
 \end{itemize}
 
-A caveat: TensorFlow's top pusher is a CI bot.
-Push concentration and PR diversity must be examined together.
+As noted in \S\ref{sec:findings}, top pushers are sometimes CI bots (e.g., TensorFlow): push concentration must always be cross-validated with PR-author diversity before drawing bus-factor conclusions.
 
 % ══════════════════════════════════════════════════════════
 \section{Discussion}\label{sec:discussion}
@@ -462,20 +465,19 @@ Multi-dimensional frameworks---combining community engagement (HF downloads), de
 
 \textbf{The ``lighter development'' paradox.}
 More developers than ever (10.6M, +51\%), yet per-repo contributor counts dropped 42\%.
-Agents may enable individuals to contribute to more projects simultaneously, but with shallower engagement.
+One plausible reading is that automation lets individuals touch more projects simultaneously but with shallower per-project engagement; equally plausible is that the long tail of single-commit accounts grew without a matching growth in core maintainers. We cannot adjudicate between these from event-level data alone.
 
 \textbf{24/7 development and sustainability.}
-The vanished weekend gap raises sustainability concerns.
-While partly attributable to automated agents, it may also reflect increasing pressure on human developers.
-Distinguishing human from agent activity is critical for future work.
+The vanished weekend gap raises sustainability questions, but it does not by itself indicate whether the additional weekend activity is automated or human.
+Distinguishing human from automated event sources---through commit-message heuristics, signed-commit metadata, or actor-name patterns---is critical for future work.
 
-\textbf{Limitations.}
+\textbf{Limitations and threats to validity.}
 \begin{itemize}[nosep]
-  \item Q1-only sampling may miss seasonal effects.
-  \item We cannot reliably distinguish agent-generated from human-generated events at the individual level.
-  \item The 2026 event drop conflates GitHub's account cleanup with genuine behavioral changes.
-  \item Health score weights are heuristic; sensitivity analysis would strengthen results.
-  \item The 93 seed repos may not fully represent the AI ecosystem.
+  \item \emph{External:} Q1-only sampling may miss seasonal effects; the 93 seed repos may not represent the full AI ecosystem.
+  \item \emph{Construct:} we cannot reliably distinguish agent-generated from human-generated events at the individual level, so ``high-frequency push activity'' is at best a proxy for agent adoption.
+  \item \emph{Internal:} the 2026 event drop conflates the tail of GitHub's fake-star clean-up~\cite{he2024fakestars}, the late-2025 schema change~\cite{ghchangelog2025}, and possible genuine behavioral changes; we cannot decompose the contributions.
+  \item \emph{Construct:} health-score weights are heuristic; a sensitivity analysis (e.g., equal weights or doubling $S_{\text{PyPI}}$) is left to future work but is not expected to overturn the qualitative ranking divergence reported in \S\ref{sec:stars}, given $\rho = 0.46$ between stars and $H$.
+  \item \emph{Internal:} 580 corrupt 2026-Q1 hourly archives were skipped via \texttt{ignoreCorruptFiles}, contributing $\le$0.39\% to event counts.
 \end{itemize}
 
 % ══════════════════════════════════════════════════════════
@@ -484,30 +486,36 @@ Distinguishing human from agent activity is critical for future work.
 \begin{enumerate}[nosep]
   \item \textbf{Design for the constraint.} The 500~GB quota forced a rolling pipeline that proved more crash-safe than a monolithic approach.
   \item \textbf{Never trust a live API schema.} The 2026 change silently broke our merge query---always assert assumptions.
-  \item \textbf{Validate anomalies externally.} The 2026 event drop appeared to be a bug; cross-referencing with~\cite{daoudi2024} confirmed it was real.
+  \item \textbf{Validate anomalies externally.} The 2026 event drop initially looked like a pipeline bug; cross-referencing the magnitude and timing with He et al.'s fake-star clean-up~\cite{he2024fakestars} and the 2025 GitHub event-payload schema change~\cite{ghchangelog2025} convinced us it reflected real, multi-cause platform-side effects rather than a defect in our pipeline.
 \end{enumerate}
 
 % ══════════════════════════════════════════════════════════
 \section{Conclusion}\label{sec:conclusion}
 
-We analyzed 1.46~billion GitHub events across the 2022--2026 coding agent era, complemented by Hugging Face and PyPI data.
-Three key findings:
+We analyzed 1.46~billion GitHub events across the 2022--2026 coding-agent era, complemented by Hugging Face and PyPI data.
+Five findings:
 
 \begin{enumerate}[nosep]
   \item \textbf{Development got lighter}: +51\% developers, $-$42\% contributors per repo, smaller and more frequent pushes.
-  \item \textbf{Weekends disappeared}: Weekend activity reached 29.7\%, erasing the human work--rest signal.
-  \item \textbf{Two-phase adoption}: 2025 explosion (automated pushers tripled) $\rightarrow$ 2026 normalization (broader but lighter).
+  \item \textbf{Weekends flattened}: Weekend activity reached 29.7\%, eliminating the historic human work--rest signal---compatible with, but not proof of, round-the-clock automation.
+  \item \textbf{Two-phase high-frequency push activity}: 2025 explosion ($>$1K-pushes cohort nearly doubled) $\rightarrow$ 2026 normalization (broader but lighter), plausibly tracking but not equivalent to coding-agent adoption.
+  \item \textbf{Stars $\neq$ health}: Spearman $\rho = 0.46$ between stars and our composite health score on the AI subset; only 4 of the top-10-by-stars repos appear in the top-10-by-$H$.
+  \item \textbf{Concentrated authorship}: AI repos exhibit systematically higher push concentration; \texttt{open-webui} has one author responsible for 99.7\% of pushes despite 957 PR contributors. Push concentration must be cross-validated with PR-author diversity.
 \end{enumerate}
 
-Traditional metrics like stars are increasingly unreliable.
-Multi-dimensional measurement---community adoption, package downloads, and engineering activity---is essential for accurate OSS health assessment.
+Traditional metrics like stars are increasingly unreliable in isolation.
+Multi-dimensional measurement---community adoption, package downloads, and engineering-activity diversity---is essential for accurate OSS health assessment.
 
-\textbf{Future work} includes: developing heuristics to distinguish agent from human events; extending to full-year coverage; incorporating code review latency and issue resolution time; and longitudinal tracking of individual project health trajectories.
+\textbf{Future work} includes: developing actor-level heuristics to separate agent from human activity (commit message style, signing keys, naming patterns); extending to full-year coverage; incorporating code-review latency and issue-resolution time; sensitivity analysis on health-score weights; and longitudinal tracking of individual project health trajectories.
 
 % ══════════════════════════════════════════════════════════
 \section*{Acknowledgments}
 
-We thank NYU High Performance Computing for providing the Google Cloud Dataproc cluster, GH Archive for open hourly event logs, Hugging Face Hub for public model metadata, and PyPI for download statistics.
+We thank NYU High Performance Computing for providing the Google Cloud Dataproc cluster, GH Archive for open hourly event logs, Hugging Face Hub for public model metadata, and PyPI (via Google BigQuery) for download statistics.
+
+\section*{Data and Code Availability}
+
+The PySpark pipeline (10 analytics jobs), seed-repo list, and aggregated CSV outputs underlying every figure and table in this paper are organized in our project repository (\texttt{spark\_jobs/}, \texttt{data/}, \texttt{charts/}). All raw inputs are publicly redistributable from their original sources.
 
 % ══════════════════════════════════════════════════════════
 \bibliographystyle{plainnat}

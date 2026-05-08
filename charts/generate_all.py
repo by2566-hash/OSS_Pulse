@@ -71,7 +71,8 @@ ax.set_xlabel('PyPI Downloads (2025, log scale)')
 ax.set_ylabel('GitHub Stars (2025)')
 ax.set_title('Stars ≠ Health: PyPI Downloads vs GitHub Stars\n(bubble size = HF model count, color = health score)')
 fig.tight_layout()
-fig.savefig(f'{OUT}/01_stars_vs_health.png', dpi=200)
+fig.savefig(f'{OUT}/01_stars_vs_health.png', dpi=300)
+fig.savefig(f'{OUT}/01_stars_vs_health.pdf')
 plt.close()
 print('[OK] 01_stars_vs_health.png')
 
@@ -122,7 +123,8 @@ ax.set_title('Contributor Concentration: Who Really Pushes Code?\n(green = healt
 ax.set_xlim(0, 1.2)
 ax.axvline(x=0.5, color=GRAY, linestyle=':', alpha=0.5)
 fig.tight_layout()
-fig.savefig(f'{OUT}/02_contributor_risk.png', dpi=200)
+fig.savefig(f'{OUT}/02_contributor_risk.png', dpi=300)
+fig.savefig(f'{OUT}/02_contributor_risk.pdf')
 plt.close()
 print('[OK] 02_contributor_risk.png')
 
@@ -169,7 +171,8 @@ ax2.annotate('Events -29%\nDevelopers +3%', xy=(4, sm['total_events'].iloc[4]/1e
              arrowprops=dict(arrowstyle='->', color=RED, lw=1.5))
 
 fig.tight_layout()
-fig.savefig(f'{OUT}/03_era_shift.png', dpi=200)
+fig.savefig(f'{OUT}/03_era_shift.png', dpi=300)
+fig.savefig(f'{OUT}/03_era_shift.pdf')
 plt.close()
 print('[OK] 03_era_shift.png')
 
@@ -208,7 +211,8 @@ ax.set_title('The Weekend Gap Disappeared\n(weekend share approaching natural 28
 ax.set_ylim(20, 33)
 ax.legend(fontsize=11)
 fig.tight_layout()
-fig.savefig(f'{OUT}/04_weekend_gap.png', dpi=200)
+fig.savefig(f'{OUT}/04_weekend_gap.png', dpi=300)
+fig.savefig(f'{OUT}/04_weekend_gap.pdf')
 plt.close()
 print('[OK] 04_weekend_gap.png')
 
@@ -257,7 +261,8 @@ h2, l2 = ax2.get_legend_handles_labels()
 ax1.legend(h1+h2, l1+l2, loc='upper left', fontsize=11)
 
 fig.tight_layout()
-fig.savefig(f'{OUT}/05_agent_phases.png', dpi=200)
+fig.savefig(f'{OUT}/05_agent_phases.png', dpi=300)
+fig.savefig(f'{OUT}/05_agent_phases.pdf')
 plt.close()
 print('[OK] 05_agent_phases.png')
 
@@ -271,7 +276,7 @@ wbt = pd.read_csv(f'{DATA}/dev_rhythm/weekday_weekend_by_type.csv')
 event_types = ['PushEvent', 'PullRequestEvent']
 eras_sorted = sorted(wbt['era'].unique())
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(8, 4.5), sharey=True)
 
 for idx, et in enumerate(event_types):
     ax = axes[idx]
@@ -284,22 +289,27 @@ for idx, et in enumerate(event_types):
 
     color = BLUE if et == 'PushEvent' else PURPLE
     bars = ax.bar(range(len(eras_sorted)), pcts,
-                  color=[color]*4 + [ORANGE], edgecolor='white', width=0.6)
-    ax.axhline(y=28.9, color=RED, linestyle='--', linewidth=1.5, alpha=0.6)
+                  color=[color]*4 + [ORANGE], edgecolor='white', width=0.65)
+    ax.axhline(y=28.9, color=RED, linestyle='--', linewidth=1.4, alpha=0.7)
 
     for i, (bar, pct) in enumerate(zip(bars, pcts)):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.3,
-                f'{pct:.1f}%', ha='center', fontsize=10, fontweight='bold')
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.35,
+                f'{pct:.1f}%', ha='center', fontsize=11, fontweight='bold')
 
     ax.set_xticks(range(len(eras_sorted)))
-    ax.set_xticklabels(eras_sorted, fontsize=10)
-    ax.set_title(et.replace('Event', ''), fontsize=14, fontweight='bold')
+    ax.set_xticklabels([e.replace('-Q1', '') for e in eras_sorted],
+                       fontsize=12, rotation=0)
+    ax.set_title(et.replace('Event', ''), fontsize=15, fontweight='bold')
+    ax.tick_params(axis='y', labelsize=11)
     ax.set_ylim(15, 35)
 
-axes[0].set_ylabel('Weekend Share (%)')
-fig.suptitle('Weekend Activity by Event Type\n(red line = 28.9% natural baseline)', fontsize=15, fontweight='bold')
-fig.tight_layout()
-fig.savefig(f'{OUT}/06_weekend_by_type.png', dpi=200)
+axes[0].set_ylabel('Weekend Share (%)', fontsize=12)
+fig.suptitle('Weekend Activity by Event Type   '
+             '(red dashed line = 28.9\\% natural baseline)',
+             fontsize=14, fontweight='bold', y=1.00)
+fig.tight_layout(rect=[0, 0, 1, 0.95])
+fig.savefig(f'{OUT}/06_weekend_by_type.png', dpi=300)
+fig.savefig(f'{OUT}/06_weekend_by_type.pdf')
 plt.close()
 print('[OK] 06_weekend_by_type.png')
 
@@ -331,7 +341,8 @@ ax.set_ylabel('Events (millions)')
 ax.set_title('Event Type Distribution Across 5 Eras\n(note WatchEvent -63% and ForkEvent -67% in 2026)')
 ax.legend(loc='upper left')
 fig.tight_layout()
-fig.savefig(f'{OUT}/07_event_distribution.png', dpi=200)
+fig.savefig(f'{OUT}/07_event_distribution.png', dpi=300)
+fig.savefig(f'{OUT}/07_event_distribution.pdf')
 plt.close()
 print('[OK] 07_event_distribution.png')
 
